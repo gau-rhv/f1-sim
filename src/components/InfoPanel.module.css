@@ -1,0 +1,77 @@
+.panel {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  width: 210px;
+  background: rgba(10, 10, 10, 0.90);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-left: 3px solid #E8002D;
+  padding: 14px 16px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #555555;
+}
+
+.value {
+  font-family: var(--font-data);
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.valueGreen {
+  composes: value;
+  font-size: 14px;
+  font-weight: 600;
+  color: #39FF14;
+}
+
+.valueYellow {
+  composes: value;
+  font-size: 14px;
+  font-weight: 600;
+  color: #FFD700;
+}
+
+.valueRed {
+  composes: value;
+  font-size: 14px;
+  font-weight: 600;
+  color: #E8002D;
+}
+
+.valueBlue {
+  composes: value;
+  font-size: 14px;
+  font-weight: 600;
+  color: #00D2FF;
+}
+
+.valueLarge {
+  composes: value;
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, #E8002D 0%, rgba(232, 0, 45, 0.2) 60%, transparent 100%);
+  margin: 4px 0;
+}

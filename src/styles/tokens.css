@@ -1,0 +1,65 @@
+:root {
+  /* Core Palette */
+  --color-bg:            #0A0A0A;
+  --color-bg-elevated:   #111111;
+  --color-bg-card:       rgba(255, 255, 255, 0.035);
+  --color-bg-card-hover: rgba(255, 255, 255, 0.06);
+  --color-surface:       #1A1A1A;
+
+  /* Accent — F1 Official Red */
+  --color-red:           #E8002D;
+  --color-red-dim:       rgba(232, 0, 45, 0.15);
+  --color-red-glow:      rgba(232, 0, 45, 0.35);
+  --color-red-border:    rgba(232, 0, 45, 0.45);
+
+  /* Text */
+  --color-text-primary:  #FFFFFF;
+  --color-text-secondary:#AAAAAA;
+  --color-text-muted:    #555555;
+  --color-text-data:     #F0F0F0;
+
+  /* Borders */
+  --color-border:        rgba(255, 255, 255, 0.07);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
+
+  /* Status */
+  --color-green:         #39FF14;
+  --color-yellow:        #FFD700;
+  --color-blue:          #00D2FF;
+
+  /* Track Analysis Colors */
+  --color-speed-max:     #FF1E00;
+  --color-speed-high:    #FFD700;
+  --color-speed-mid:     #00FF87;
+  --color-speed-low:     #00D2FF;
+  --color-speed-min:     #3050FF;
+  --color-brake-zone:    rgba(255, 30, 0, 0.75);
+  --color-drs-zone:      rgba(0, 210, 255, 0.75);
+  --color-apex:          #FFD700;
+  --color-racing-line:   #E8002D;
+
+  /* Typography */
+  --font-display:        'Titillium Web', sans-serif;
+  --font-data:           'Titillium Web', monospace;
+
+  /* Spacing Scale (8pt grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Transitions */
+  --transition-fast:   120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-medium: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow:   500ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Shadows */
+  --shadow-red-sm:  0 0 12px rgba(232, 0, 45, 0.25);
+  --shadow-red-md:  0 0 30px rgba(232, 0, 45, 0.40);
+  --shadow-red-lg:  0 0 60px rgba(232, 0, 45, 0.30);
+  --shadow-card:    0 4px 24px rgba(0, 0, 0, 0.6);
+}
