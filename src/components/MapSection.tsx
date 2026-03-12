@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '@/lib/store';
 import { tracks, TrackData } from '@/lib/tracks';
 import { processTrack, ProcessedTrack } from '@/lib/useProcessedTrack';
-import TrackSelector from '@/components/TrackSelector';
 import FilterStrip from '@/components/FilterStrip';
 import InfoPanel from '@/components/InfoPanel';
 import SpeedLegend from '@/components/SpeedLegend';
@@ -51,7 +50,6 @@ export default function MapSection() {
   return (
     <section id="map" className={styles.main}>
       <div className={styles.content}>
-        <TrackSelector />
         <div className={styles.sceneContainer}>
           {processed ? (
             <>

@@ -40,8 +40,8 @@ export function processTrack(track: TrackData): ProcessedTrack {
   // 1. Interpolate to smooth centerline (100 points for perf)
   const centerline = interpolateTrack(track.points, 100);
 
-  // 2. Optimize racing line (10 iterations for perf)
-  const racingLine = optimizeRacingLine(centerline, 10, 320);
+  // 2. Optimize racing line (25 iterations for better convergence)
+  const racingLine = optimizeRacingLine(centerline, 25, 320);
 
   // 3. Speed profile using f1-sim formula
   const speeds = computeSpeedProfile(racingLine, track, 320, 1.0);

@@ -42,11 +42,30 @@
 }
 
 .grid {
-  max-width: 980px;
+  max-width: 1200px;
   margin: 0 auto;
   display: grid;
-  gap: 16px;
-  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  grid-template-columns: 350px auto 350px;
+  justify-content: center;
+  align-items: center;
+}
+
+.carWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding: 0;
+}
+
+.carImage {
+  max-width: 100%;
+  height: auto;
+  max-height: 60vh;
+  object-fit: contain;
+  filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.4));
+  transform: scale(1.1) perspective(1000px) rotateY(-15deg) rotateX(5deg);
 }
 
 .panel {
@@ -111,10 +130,59 @@
   box-shadow: 0 0 18px rgba(227, 58, 58, 0.28);
 }
 
-.slider {
-  width: 100%;
-  accent-color: #e33a3a;
+.sliderContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin-bottom: 12px;
+}
+
+.sliderLabel {
+  font-family: var(--font-data);
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(219, 228, 246, 0.5);
+  min-width: 32px;
+}
+
+.sliderLabel:first-child {
+  text-align: right;
+}
+
+.sliderLabel:last-child {
+  text-align: left;
+}
+
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(to right, #00d2ff, #e8002d);
+  border-radius: 4px;
+  outline: none;
+  margin-bottom: 12px;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+}
+
+.slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
 }
 
 .presets {

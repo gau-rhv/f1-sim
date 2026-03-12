@@ -155,25 +155,54 @@ export function optimizeRacingLine(
       line[i][1] -= lr * gradY;
 
       // Clamp: stay within trackWidth of nearest track point
-      const trackWidth = 20;
+      const trackWidth = 12;
       let nearestIdx = 0;
       let nearestDist = Infinity;
+      let projX = 0, projY = 0;
+      
       for (let j = 0; j < trackPoints.length; j++) {
-        const dx = line[i][0] - trackPoints[j][0];
-        const dy = line[i][1] - trackPoints[j][1];
-        const d = dx * dx + dy * dy;
+        const curr = trackPoints[j];
+        const next = trackPoints[(j + 1) % trackPoints.length];
+        
+        const dx = next[0] - curr[0];
+        const dy = next[1] - curr[1];
+        const lenSq = dx * dx + dy * dy;
+        
+        if (lenSq > 0) {
+          const t = Math.max(0, Math.min(1, 
+            ((line[i][0] - curr[0]) * dx + (line[i][1] - curr[1]) * dy) / lenSq
+          ));
+          projX = curr[0] + t * dx;
+          projY = curr[1] + t * dy;
+        } else {
+          projX = curr[0];
+          projY = curr[1];
+        }
+        
+        const distX = line[i][0] - projX;
+        const distY = line[i][1] - projY;
+        const d = distX * distX + distY * distY;
+        
         if (d < nearestDist) {
           nearestDist = d;
           nearestIdx = j;
+          if (lenSq > 0) {
+            const t = Math.max(0, Math.min(1, 
+              ((line[i][0] - curr[0]) * dx + (line[i][1] - curr[1]) * dy) / lenSq
+            ));
+            projX = curr[0] + t * dx;
+            projY = curr[1] + t * dy;
+          }
         }
       }
+      
       nearestDist = Math.sqrt(nearestDist);
       if (nearestDist > trackWidth) {
-        const dx = line[i][0] - trackPoints[nearestIdx][0];
-        const dy = line[i][1] - trackPoints[nearestIdx][1];
+        const dx = line[i][0] - projX;
+        const dy = line[i][1] - projY;
         const scale = trackWidth / nearestDist;
-        line[i][0] = trackPoints[nearestIdx][0] + dx * scale;
-        line[i][1] = trackPoints[nearestIdx][1] + dy * scale;
+        line[i][0] = projX + dx * scale;
+        line[i][1] = projY + dy * scale;
       }
     }
   }

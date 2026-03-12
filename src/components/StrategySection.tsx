@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Gauge, Thermometer, Flag, Timer } from 'lucide-react';
+import { useAppStore } from '@/lib/store';
 import {
   TRACKS,
   TYRES,
@@ -17,7 +18,24 @@ const DRY_TYRES: TyreCompound[] = ['dry-soft', 'dry-medium', 'dry-hard'];
 const WET_TYRES: TyreCompound[] = ['wet-fullwet', 'wet-intermediate'];
 
 export default function StrategySection() {
-  const [track, setTrack] = useState<Track>('spa');
+  const activeTrackName = useAppStore((s) => s.activeTrack);
+  const setActiveTrackName = useAppStore((s) => s.setActiveTrack);
+
+  const trackMapAppToStrategy: Record<string, Track> = {
+    'SPA-FRANCORCHAMPS': 'spa',
+    'SILVERSTONE': 'silverstone',
+    'BAHRAIN': 'bahrain',
+    'MONZA': 'monza',
+  };
+
+  const trackMapStrategyToApp: Record<Track, string> = {
+    spa: 'SPA-FRANCORCHAMPS',
+    silverstone: 'SILVERSTONE',
+    bahrain: 'BAHRAIN',
+    monza: 'MONZA',
+  };
+
+  const track: Track = trackMapAppToStrategy[activeTrackName] || 'spa';
   const [tyre, setTyre] = useState<TyreCompound>('dry-medium');
   const [temperature, setTemperature] = useState<number>(22);
 
@@ -55,7 +73,7 @@ export default function StrategySection() {
             value={track}
             onChange={(e) => {
               const nextTrack = e.target.value as Track;
-              setTrack(nextTrack);
+              setActiveTrackName(trackMapStrategyToApp[nextTrack]);
               setTemperature(Math.round((TRACKS[nextTrack].tempMin + TRACKS[nextTrack].tempMax) / 2));
             }}
           >
@@ -99,14 +117,18 @@ export default function StrategySection() {
           </div>
 
           <label className={styles.label}>Track Temperature: {temperature}C</label>
-          <input
-            className={styles.slider}
-            type="range"
-            min={currentTrack.tempMin}
-            max={currentTrack.tempMax}
-            value={temperature}
-            onChange={(e) => setTemperature(Number(e.target.value))}
-          />
+          <div className={styles.sliderContainer}>
+            <span className={styles.sliderLabel}>{currentTrack.tempMin}C</span>
+            <input
+              className={styles.slider}
+              type="range"
+              min={currentTrack.tempMin}
+              max={currentTrack.tempMax}
+              value={temperature}
+              onChange={(e) => setTemperature(Number(e.target.value))}
+            />
+            <span className={styles.sliderLabel}>{currentTrack.tempMax}C</span>
+          </div>
 
           <div className={styles.presets}>
             <button type="button" onClick={() => setPresetTemp('cool')}>
@@ -120,6 +142,14 @@ export default function StrategySection() {
             </button>
           </div>
         </article>
+
+        <div className={styles.carWrapper}>
+          <img 
+            src="/f1car.png" 
+            alt="F1 Car" 
+            className={styles.carImage} 
+          />
+        </div>
 
         <article className={styles.panel}>
           <h2>Simulation Output</h2>

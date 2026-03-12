@@ -1,8 +1,9 @@
 'use client';
 
 import { useAppStore } from '@/lib/store';
-import { TrackData, tracks } from '@/lib/tracks';
+import { TrackData } from '@/lib/tracks';
 import { ProcessedTrack } from '@/lib/useProcessedTrack';
+import { TRACKS, predictStrategy, formatLap, Track } from '@/lib/strategyEngine';
 import styles from './InfoPanel.module.css';
 
 export default function InfoPanel({
@@ -12,6 +13,25 @@ export default function InfoPanel({
   track: TrackData;
   processed: ProcessedTrack;
 }) {
+  const trackMapAppToStrategy: Record<string, Track> = {
+    'SPA-FRANCORCHAMPS': 'spa',
+    'SILVERSTONE': 'silverstone',
+    'BAHRAIN': 'bahrain',
+    'MONZA': 'monza',
+  };
+
+  const modelTrack = trackMapAppToStrategy[track.name];
+  const strategyInput = modelTrack 
+    ? { track: modelTrack, tyre: 'dry-medium' as const, temperature: Math.round((TRACKS[modelTrack].tempMin + TRACKS[modelTrack].tempMax) / 2) } 
+    // Fallback to Spa defaults if unrecognized
+    : { track: 'spa' as const, tyre: 'dry-medium' as const, temperature: 23 };
+
+  const strategy = predictStrategy(strategyInput);
+  
+  // Calculate scaled min speed based on difference between 3D raw max and strategy max.
+  const topSpeedRatio = strategy.topSpeed / processed.maxSpeed;
+  const scaledMinSpeed = Math.round(processed.minSpeed * topSpeedRatio);
+
   return (
     <div className={styles.panel}>
       <div className={styles.row}>
@@ -34,11 +54,11 @@ export default function InfoPanel({
       <div className={styles.divider} />
       <div className={styles.row}>
         <span className={styles.label}>TOP SPEED</span>
-        <span className={styles.valueRed}>{processed.maxSpeed} km/h</span>
+        <span className={styles.valueRed}>{strategy.topSpeed} km/h</span>
       </div>
       <div className={styles.row}>
         <span className={styles.label}>MIN SPEED</span>
-        <span className={styles.valueGreen}>{processed.minSpeed} km/h</span>
+        <span className={styles.valueGreen}>{scaledMinSpeed} km/h</span>
       </div>
       <div className={styles.row}>
         <span className={styles.label}>BRAKING ZONES</span>
@@ -51,7 +71,7 @@ export default function InfoPanel({
       <div className={styles.divider} />
       <div className={styles.row}>
         <span className={styles.label}>EST. LAP TIME</span>
-        <span className={styles.valueBig}>{processed.lapTime}</span>
+        <span className={styles.valueBig}>{formatLap(strategy.lapTimeSeconds)}</span>
       </div>
     </div>
   );
