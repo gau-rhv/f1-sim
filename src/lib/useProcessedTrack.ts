@@ -1,6 +1,6 @@
 // processes raw track data into optimized racing line + analysis
 import * as THREE from 'three';
-import { TrackData } from './tracks';
+import { TrackData, CornerData } from './tracks';
 import {
   interpolateTrack,
   optimizeRacingLine,
@@ -24,6 +24,7 @@ export interface ProcessedTrack {
   apexIndices: number[];
   lapTime: string;
   computeMs: number;
+  cornerData: CornerData[];
   // Track bounds for centering in 3D
   bounds: { minX: number; maxX: number; minY: number; maxY: number; cx: number; cy: number; range: number };
 }
@@ -87,6 +88,7 @@ export function processTrack(track: TrackData): ProcessedTrack {
     apexIndices,
     lapTime,
     computeMs,
+    cornerData: track.cornerData,
     bounds: { minX, maxX, minY, maxY, cx, cy, range },
   };
 

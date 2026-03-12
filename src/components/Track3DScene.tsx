@@ -6,6 +6,7 @@ import { OrbitControls, Line, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useAppStore } from '@/lib/store';
 import { ProcessedTrack } from '@/lib/useProcessedTrack';
+import { CornerData } from '@/lib/tracks';
 import { getSpeedColor } from '@/lib/racingLine';
 
 function ZoneLabel({ position, label, color }: { position: THREE.Vector3, label: string, color: string }) {
@@ -50,6 +51,134 @@ function ZoneLabel({ position, label, color }: { position: THREE.Vector3, label:
       </div>
     </Html>
   );
+}
+// ═══════════════════════════════════════════════════════════════
+//  ENVIRONMENT: GRANDSTANDS & DECOR
+// ═══════════════════════════════════════════════════════════════
+function Grandstand({ position, rotation }: { position: THREE.Vector3; rotation: number }) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      {/* Structural base */}
+      <mesh position={[0, 4, -8]}>
+        <boxGeometry args={[50, 8, 12]} />
+        <meshStandardMaterial color="#0a0a0a" metalness={0.9} roughness={0.1} />
+      </mesh>
+      {/* Seating tiers */}
+      {[0, 1, 2, 3].map((i) => (
+        <mesh key={i} position={[0, i * 2 + 1, -4 - i * 3]}>
+          <boxGeometry args={[48, 2, 4]} />
+          <meshStandardMaterial color="#111" />
+        </mesh>
+      ))}
+      {/* Floating Roof */}
+      <mesh position={[0, 12, -7]} rotation={[0.15, 0, 0]}>
+        <boxGeometry args={[54, 1, 16]} />
+        <meshStandardMaterial color="#E8002D" metalness={0.6} roughness={0.4} />
+      </mesh>
+      {/* Neon Detail */}
+      <mesh position={[0, 12.6, 0.5]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.3, 0.3, 54]} />
+        <meshBasicMaterial color="#E8002D" />
+      </mesh>
+    </group>
+  );
+}
+
+function ReflectiveGround() {
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.2, 0]} receiveShadow>
+      <planeGeometry args={[4000, 4000]} />
+      <meshStandardMaterial 
+        color="#050505" 
+        metalness={0.8} 
+        roughness={0.2} 
+      />
+    </mesh>
+  );
+}
+
+function CircuitEnvironment({ processed }: { processed: ProcessedTrack }) {
+  const { cx, cy } = processed.bounds;
+  const grandstands = useMemo(() => {
+    const list: { p: THREE.Vector3; r: number }[] = [];
+    
+    // 1. Main Straight Grandstand
+    const [sx, sy] = processed.centerline[0];
+    const [nx, ny] = processed.centerline[10 % processed.centerline.length];
+    const angle = Math.atan2(ny - sy, nx - sx);
+    const offX = Math.cos(angle - Math.PI / 2) * 50;
+    const offZ = Math.sin(angle - Math.PI / 2) * 50;
+    list.push({ p: new THREE.Vector3(sx - cx + offX, 0, sy - cy + offZ), r: angle });
+
+    // 2. Corner Grandstands
+    processed.cornerData.forEach((c: CornerData, i: number) => {
+      if (i % 2 === 0) { // Every other corner
+        const idx = Math.floor(c.position * processed.centerline.length);
+        const [px, py] = processed.centerline[idx];
+        const [ax, ay] = processed.centerline[(idx + 5) % processed.centerline.length];
+        const a = Math.atan2(ay - py, ax - px);
+        // Place on outside of turn roughly
+        const side = (c.angle > 0) ? -1 : 1; 
+        const ox = Math.cos(a + (Math.PI / 2) * side) * 60;
+        const oz = Math.sin(a + (Math.PI / 2) * side) * 60;
+        list.push({ p: new THREE.Vector3(px - cx + ox, 0, py - cy + oz), r: a });
+      }
+    });
+
+    return list;
+  }, [processed, cx, cy]);
+
+  return (
+    <>
+      <ReflectiveGround />
+      <gridHelper args={[2000, 50, "#222", "#111"]} position={[0, -0.15, 0]} />
+      {grandstands.map((g, i) => (
+        <Grandstand key={i} position={g.p} rotation={g.r} />
+      ))}
+    </>
+  );
+}
+
+function TrackCurbs({ processed }: { processed: ProcessedTrack }) {
+  const { cx, cy } = processed.bounds;
+  const curbs = useMemo(() => {
+    const pts = processed.centerline;
+    const n = pts.length;
+    const hw = 21; 
+    const result: any[] = [];
+
+    for (let i = 0; i < n; i++) {
+      // Curvature check
+      const p1 = pts[(i - 5 + n) % n];
+      const p2 = pts[i];
+      const p3 = pts[(i + 5) % n];
+      
+      const v1 = new THREE.Vector2(p2[0] - p1[0], p2[1] - p1[1]).normalize();
+      const v2 = new THREE.Vector2(p3[0] - p2[0], p3[1] - p2[1]).normalize();
+      const cross = v1.x * v2.y - v1.y * v2.x;
+
+      if (Math.abs(cross) > 0.04) {
+        const side = cross > 0 ? 1 : -1;
+        const next = pts[(i + 1) % n];
+        const dx = next[0] - p2[0];
+        const dy = next[1] - p2[1];
+        const len = Math.sqrt(dx * dx + dy * dy) || 1;
+        const nx = (-dy / len) * hw * side;
+        const ny = (dx / len) * hw * side;
+
+        const col = (Math.floor(i / 3) % 2 === 0) ? "#ffffff" : "#E8002D";
+        result.push(
+          <mesh key={i} position={[p2[0] - cx + nx, 0.08, p2[1] - cy + ny]} rotation={[-Math.PI / 2, 0, Math.atan2(dy, dx)]}>
+             <planeGeometry args={[2.5, 6]} />
+             <meshBasicMaterial color={col} />
+          </mesh>
+        );
+      }
+    }
+    return result;
+  }, [processed, cx, cy]);
+
+  return <group>{curbs}</group>;
 }
 
 // ═══════════════════════════════════════════════════════════════
