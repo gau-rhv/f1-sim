@@ -725,17 +725,14 @@ export default function Track3DScene({ processed }: { processed: ProcessedTrack 
       shadows
       gl={{ antialias: true }}
     >
-      {/* Lighting — like f1-sim's dark theme */}
-      <ambientLight intensity={0.35} />
-      <directionalLight intensity={1.0} position={[range * 0.3, range * 0.5, range * 0.3]} castShadow />
-      <hemisphereLight color="#1a1a3a" groundColor="#0a0a12" intensity={0.4} />
+      {/* Lighting — premium dark theme */}
+      <ambientLight intensity={1.5} />
+      <pointLight position={[0, 300, 0]} intensity={3.0} castShadow />
+      <spotLight position={[500, 500, 500]} angle={0.15} penumbra={1} intensity={2} />
 
-      {/* Ground */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]} receiveShadow>
-        <planeGeometry args={[range * 4, range * 4]} />
-        <meshStandardMaterial color="#0a0a10" roughness={1} />
-      </mesh>
-      <gridHelper args={[range * 3, 60, '#151520', '#0e0e18']} position={[0, -0.3, 0]} />
+      {/* Modern Environment & Decor */}
+      <CircuitEnvironment processed={processed} />
+      <TrackCurbs processed={processed} />
 
       {/* Track layers (matching f1-sim: surface → racing surface → boundaries → racing line → zones) */}
       <TrackSurface processed={processed} />
