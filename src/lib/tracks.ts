@@ -46,7 +46,6 @@ const monza: TrackData = {
   ],
 };
 
-// Silverstone — high-speed British circuit
 const silverstone: TrackData = {
   name: "SILVERSTONE",
   id: "silverstone",
@@ -56,21 +55,31 @@ const silverstone: TrackData = {
   corners: 18,
   lapRecord: "1:27.097",
   points: [
-    [0, 0], [100, 0], [200, 10], [300, 30], [380, 70], [420, 120],
-    [430, 170], [420, 220], [380, 260], [320, 280], [260, 290],
-    [200, 300], [150, 320], [100, 350], [50, 380], [0, 400],
-    [-50, 390], [-100, 360], [-140, 320], [-160, 270], [-150, 220],
-    [-120, 180], [-80, 150], [-40, 120], [0, 80]
+    // Bottom straight
+    [80, 320], [160, 318], [240, 316], [315, 314],
+    // Right curve going up
+    [355, 308], [385, 290], [400, 262], [405, 232],
+    // Slight kink right then sweeps left
+    [400, 200], [388, 172], [368, 148],
+    // Top right bump (Copse area bulges outward)
+    [355, 128], [348, 108], [340, 88],
+    // Top straight going left
+    [310, 72], [270, 62], [230, 58], [190, 60],
+    // Top left gentle curve
+    [152, 68], [118, 82], [90, 102],
+    // Left side coming down
+    [68, 130], [52, 162], [46, 196],
+    // Bottom left corner back to start
+    [48, 228], [54, 262], [66, 290], [80, 310],
   ],
   cornerData: [
-    { type: 'fast', angle: 45, radius: 100, position: 0.1 },
-    { type: 'medium', angle: 90, radius: 60, position: 0.3 },
-    { type: 'fast', angle: 60, radius: 90, position: 0.5 },
-    { type: 'medium', angle: 120, radius: 45, position: 0.7 },
-    { type: 'fast', angle: 90, radius: 70, position: 0.9 },
+    { type: 'fast',   angle: 55, radius: 60, position: 0.12 },
+    { type: 'medium', angle: 85, radius: 40, position: 0.30 },
+    { type: 'fast',   angle: 60, radius: 55, position: 0.52 },
+    { type: 'medium', angle: 90, radius: 38, position: 0.72 },
+    { type: 'tight',  angle: 110, radius: 22, position: 0.90 },
   ],
 };
-
 // Spa-Francorchamps — legendary Belgian circuit
 const spa: TrackData = {
   name: "SPA-FRANCORCHAMPS",
@@ -81,23 +90,28 @@ const spa: TrackData = {
   corners: 19,
   lapRecord: "1:41.252",
   points: [
-    [0, 0], [150, 0], [300, 20], [450, 60], [550, 120], [600, 180],
-    [620, 250], [610, 320], [570, 380], [500, 420], [420, 440],
-    [340, 450], [260, 470], [180, 500], [100, 540], [30, 580],
-    [-20, 620], [-50, 650], [-60, 680], [-50, 700], [-20, 710],
-    [20, 700], [50, 680], [70, 650], [60, 600], [30, 540],
-    [-20, 480], [-80, 420], [-120, 360], [-140, 300], [-130, 240],
-    [-100, 190], [-60, 150], [-20, 110], [0, 60]
+    // ── Top connector arch (left → right) ──
+    [40, 100], [52, 55], [85, 22], [130, 10], [175, 22], [208, 55],
+    // ── Right straight going DOWN ──
+    [220, 100], [220, 150], [220, 200], [220, 250],
+    [220, 300], [220, 350], [220, 400],
+    // ── Big round hook at the bottom (turns RIGHT, clockwise) ──
+    [217, 423], [208, 445], [194, 464],
+    [175, 478], [153, 487], [130, 490],
+    [107, 487], [85, 478], [66, 464],
+    [52, 445], [43, 423],
+    // ── Left straight going UP ──
+    [40, 400], [40, 350], [40, 300], [40, 250],
+    [40, 200], [40, 150], [40, 100],
   ],
   cornerData: [
-    { type: 'hairpin', angle: 180, radius: 20, position: 0.1 },
-    { type: 'fast', angle: 30, radius: 150, position: 0.3 },
-    { type: 'medium', angle: 90, radius: 50, position: 0.5 },
-    { type: 'fast', angle: 60, radius: 120, position: 0.7 },
-    { type: 'tight', angle: 150, radius: 30, position: 0.9 },
+    { type: 'fast',    angle: 40,  radius: 55, position: 0.04 }, // top arch
+    { type: 'medium',  angle: 85,  radius: 40, position: 0.30 }, // right straight entry
+    { type: 'hairpin', angle: 180, radius: 18, position: 0.55 }, // bottom hook apex
+    { type: 'medium',  angle: 85,  radius: 40, position: 0.78 }, // left straight entry
+    { type: 'fast',    angle: 40,  radius: 55, position: 0.96 }, // top arch return
   ],
 };
-
 // Bahrain International Circuit — desert night circuit
 const bahrain: TrackData = {
   name: "BAHRAIN",
@@ -108,20 +122,33 @@ const bahrain: TrackData = {
   corners: 15,
   lapRecord: "1:31.447",
   points: [
-    [0, 0], [80, 0], [160, 10], [240, 40], [300, 80], [340, 130],
-    [360, 190], [370, 250], [360, 310], [330, 360], [280, 400],
-    [220, 420], [160, 430], [100, 440], [40, 460], [-10, 490],
-    [-40, 520], [-50, 550], [-40, 570], [-10, 580], [30, 570],
-    [60, 550], [70, 520], [60, 480], [30, 430], [-10, 380],
-    [-40, 330], [-50, 280], [-40, 230], [-10, 180], [20, 130],
-    [40, 80], [30, 40]
+    // ── Top straight (left → right) ──
+    [60, 60], [120, 58], [180, 56], [240, 55], [300, 56],
+    // ── Turn 1-2-3 right-side chicane (going down) ──
+    [340, 62], [365, 78], [378, 100],
+    [380, 130], [372, 158],
+    // ── Short straight then tight Turn 4 hairpin ──
+    [355, 180], [348, 200], [352, 222],
+    [365, 240], [378, 255],
+    // ── Descent to Turn 5-6-7 ──
+    [382, 280], [375, 308], [358, 330],
+    [332, 348], [300, 358],
+    // ── Bottom straight (right → left) ──
+    [260, 362], [220, 364], [180, 365], [140, 364], [100, 360],
+    // ── Turn 8-9-10 left-side curves (going up) ──
+    [70, 352], [48, 335], [35, 310],
+    [30, 280], [32, 248],
+    // ── Back straight going up ──
+    [38, 218], [44, 185], [48, 150],
+    // ── Turn 11-12 sweeping left back to start ──
+    [50, 120], [52, 92], [56, 74],
   ],
   cornerData: [
-    { type: 'tight', angle: 120, radius: 30, position: 0.15 },
-    { type: 'medium', angle: 90, radius: 50, position: 0.35 },
-    { type: 'tight', angle: 140, radius: 25, position: 0.55 },
-    { type: 'medium', angle: 90, radius: 45, position: 0.75 },
-    { type: 'tight', angle: 120, radius: 35, position: 0.9 },
+    { type: 'tight',  angle: 120, radius: 28, position: 0.14 },  // T1-2-3 chicane
+    { type: 'hairpin', angle: 160, radius: 18, position: 0.32 },  // T4 hairpin
+    { type: 'medium', angle: 90,  radius: 42, position: 0.52 },  // T5-6-7
+    { type: 'tight',  angle: 110, radius: 30, position: 0.72 },  // T8-9-10
+    { type: 'medium', angle: 70,  radius: 50, position: 0.92 },  // T11-12
   ],
 };
 
