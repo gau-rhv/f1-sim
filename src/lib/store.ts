@@ -27,7 +27,7 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  activeTrack: 'MONACO',
+  activeTrack: 'MONZA',
   setActiveTrack: (name) => set({ activeTrack: name, isZoomed: false, zoomTarget: null }),
 
   isZoomed: false,

@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '@/lib/store';
 import { tracks, TrackData } from '@/lib/tracks';
 import { processTrack, ProcessedTrack } from '@/lib/useProcessedTrack';
@@ -30,8 +30,14 @@ export default function MapPage() {
     return tracks.find((t) => t.name === activeTrack) || tracks[0];
   }, [activeTrack]);
 
-  const processed: ProcessedTrack = useMemo(() => {
-    return processTrack(currentTrack);
+  const [processed, setProcessed] = useState<ProcessedTrack | null>(null);
+
+  useEffect(() => {
+    setProcessed(null);
+    const timer = setTimeout(() => {
+      setProcessed(processTrack(currentTrack));
+    }, 10);
+    return () => clearTimeout(timer);
   }, [currentTrack]);
 
   useEffect(() => {
@@ -47,10 +53,19 @@ export default function MapPage() {
       <div className={styles.content}>
         <TrackSelector />
         <div className={styles.sceneContainer}>
-          <Track3DScene processed={processed} />
-          <InfoPanel track={currentTrack} processed={processed} />
-          <FilterStrip />
-          <SpeedLegend processed={processed} />
+          {processed ? (
+            <>
+              <Track3DScene processed={processed} />
+              <InfoPanel track={currentTrack} processed={processed} />
+              <FilterStrip />
+              <SpeedLegend processed={processed} />
+            </>
+          ) : (
+            <div className={styles.loading}>
+              <div className={styles.loadingBar} />
+              <span className={styles.loadingText}>COMPUTING RACING LINE...</span>
+            </div>
+          )}
           <ControlsHint />
         </div>
       </div>

@@ -365,6 +365,10 @@ function AnimatedCar({ processed }: { processed: ProcessedTrack }) {
   const hl = useRef<THREE.PointLight>(null);
   const tl = useRef<THREE.PointLight>(null);
   const tRef = useRef(0);
+  const posVec = useMemo(() => new THREE.Vector3(), []);
+  const lookVec = useMemo(() => new THREE.Vector3(), []);
+  const hlVec = useMemo(() => new THREE.Vector3(), []);
+  const tlVec = useMemo(() => new THREE.Vector3(), []);
 
   useFrame((_, dt) => {
     if (!car.current) return;
@@ -374,8 +378,8 @@ function AnimatedCar({ processed }: { processed: ProcessedTrack }) {
     tRef.current += dt * 0.04 * (speed / 340);
     if (tRef.current > 1) tRef.current -= 1;
 
-    const p = processed.curve3D.getPointAt(tRef.current);
-    const t = processed.curve3D.getTangentAt(tRef.current);
+    const p = processed.curve3D.getPointAt(tRef.current, posVec);
+    const t = processed.curve3D.getTangentAt(tRef.current, lookVec);
     car.current.position.set(p.x, 1, p.z);
     car.current.lookAt(p.x + t.x, 1, p.z + t.z);
 
@@ -418,6 +422,8 @@ function CameraController({ processed }: { processed: ProcessedTrack }) {
   const { isZoomed, zoomTarget } = useAppStore();
   const target = useRef(new THREE.Vector3());
   const carT = useRef(0);
+  const pVec = useMemo(() => new THREE.Vector3(), []);
+  const tVec = useMemo(() => new THREE.Vector3(), []);
   const { range } = processed.bounds;
 
   // Dynamic camera distance based on track size
@@ -428,8 +434,8 @@ function CameraController({ processed }: { processed: ProcessedTrack }) {
     if (carT.current > 1) carT.current -= 1;
 
     if (isZoomed && zoomTarget) {
-      const p = processed.curve3D.getPointAt(carT.current % 1);
-      const t = processed.curve3D.getTangentAt(carT.current % 1);
+      const p = processed.curve3D.getPointAt(carT.current % 1, pVec);
+      const t = processed.curve3D.getTangentAt(carT.current % 1, tVec);
       target.current.set(p.x - t.x * 20, 12, p.z - t.z * 20);
       camera.position.lerp(target.current, 0.04);
       camera.lookAt(p.x + t.x * 10, 0, p.z + t.z * 10);

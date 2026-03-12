@@ -21,11 +21,11 @@ export interface TrackData {
   cornerData: CornerData[];
 }
 
-// Monaco Grand Prix — tight street circuit
-const monaco: TrackData = {
-  name: "MONACO",
-  id: "monaco",
-  country: "Monaco",
+// Monza Grand Prix — tight street circuit
+const monza: TrackData = {
+  name: "MONZA",
+  id: "monza",
+  country: "Monza",
   flag: "🇲🇨",
   lengthKm: 3.337,
   corners: 19,
@@ -125,7 +125,7 @@ const bahrain: TrackData = {
   ],
 };
 
-export const tracks: TrackData[] = [monaco, silverstone, spa, bahrain];
+export const tracks: TrackData[] = [monza, silverstone, spa, bahrain];
 
 export function getTrackByName(name: string): TrackData | undefined {
   return tracks.find(t => t.name === name);

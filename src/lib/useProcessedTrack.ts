@@ -28,14 +28,20 @@ export interface ProcessedTrack {
   bounds: { minX: number; maxX: number; minY: number; maxY: number; cx: number; cy: number; range: number };
 }
 
+const trackCache = new Map<string, ProcessedTrack>();
+
 export function processTrack(track: TrackData): ProcessedTrack {
+  if (trackCache.has(track.id)) {
+    return trackCache.get(track.id)!;
+  }
+
   const t0 = performance.now();
 
-  // 1. Interpolate to smooth centerline (200 points)
-  const centerline = interpolateTrack(track.points, 200);
+  // 1. Interpolate to smooth centerline (100 points for perf)
+  const centerline = interpolateTrack(track.points, 100);
 
-  // 2. Optimize racing line (50 iterations for perf)
-  const racingLine = optimizeRacingLine(centerline, 50, 320);
+  // 2. Optimize racing line (10 iterations for perf)
+  const racingLine = optimizeRacingLine(centerline, 10, 320);
 
   // 3. Speed profile using f1-sim formula
   const speeds = computeSpeedProfile(racingLine, track, 320, 1.0);
@@ -69,7 +75,7 @@ export function processTrack(track: TrackData): ProcessedTrack {
 
   const computeMs = Math.round(performance.now() - t0);
 
-  return {
+  const result: ProcessedTrack = {
     centerline,
     racingLine,
     speeds,
@@ -83,4 +89,7 @@ export function processTrack(track: TrackData): ProcessedTrack {
     computeMs,
     bounds: { minX, maxX, minY, maxY, cx, cy, range },
   };
+
+  trackCache.set(track.id, result);
+  return result;
 }
