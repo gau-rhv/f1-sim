@@ -23,7 +23,7 @@ export default function FilterStrip() {
       {filters.map((f) => (
         <button
           key={f.key}
-          className={`${styles.btn} ${state[f.key] ? styles.active : ''}`}
+          className={`${styles.toggle} ${state[f.key] ? styles.active : ''}`}
           onClick={() => toggle(f.key)}
           style={{ '--dot-color': f.color } as React.CSSProperties}
         >
