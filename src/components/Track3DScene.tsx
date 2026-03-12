@@ -2,11 +2,55 @@
 
 import { useRef, useMemo, useCallback } from 'react';
 import { Canvas, useFrame, useThree, ThreeEvent } from '@react-three/fiber';
-import { OrbitControls, Line } from '@react-three/drei';
+import { OrbitControls, Line, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useAppStore } from '@/lib/store';
 import { ProcessedTrack } from '@/lib/useProcessedTrack';
 import { getSpeedColor } from '@/lib/racingLine';
+
+function ZoneLabel({ position, label, color }: { position: THREE.Vector3, label: string, color: string }) {
+  return (
+    <Html position={position} center distanceFactor={150} zIndexRange={[100, 0]}>
+      <div style={{
+        background: 'rgba(10,10,10,0.9)',
+        border: `1px solid color-mix(in srgb, ${color} 50%, transparent)`,
+        color: '#fff',
+        padding: '6px 10px',
+        borderRadius: '4px',
+        fontFamily: 'var(--font-display)',
+        fontSize: '11px',
+        fontWeight: 'bold',
+        letterSpacing: '0.15em',
+        whiteSpace: 'nowrap',
+        pointerEvents: 'none',
+        transform: 'translate3d(0, -30px, 0)',
+        boxShadow: `0 4px 12px rgba(0,0,0,0.5)`,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      }}>
+        {label}
+        {/* Pointer line */}
+        <div style={{
+          width: '1px',
+          height: '30px',
+          background: color,
+          position: 'absolute',
+          top: '100%',
+        }} />
+        {/* Pointer dot at bottom */}
+        <div style={{
+          width: '4px',
+          height: '4px',
+          borderRadius: '50%',
+          background: color,
+          position: 'absolute',
+          top: 'calc(100% + 28px)',
+        }} />
+      </div>
+    </Html>
+  );
+}
 
 // ═══════════════════════════════════════════════════════════════
 //  Layer 1: TRACK SURFACE — dark grey asphalt ribbon
@@ -202,12 +246,19 @@ function BrakingZoneLines({ processed }: { processed: ProcessedTrack }) {
     }),
   [processed, cx, cy]);
 
+  const labelPos = useMemo(() => {
+    if (!segments.length) return null;
+    const longest = segments.reduce((prev, curr) => (curr.length > prev.length ? curr : prev));
+    return longest.length > 0 ? longest[Math.floor(longest.length / 2)] : null;
+  }, [segments]);
+
   if (!show) return null;
   return (
     <>
       {segments.map((pts, i) =>
         pts.length > 1 ? <Line key={`b${i}`} points={pts} color="#FF4444" lineWidth={6} /> : null
       )}
+      {labelPos && <ZoneLabel position={labelPos} label="BRAKE ZONE" color="#FF4444" />}
     </>
   );
 }
@@ -230,12 +281,19 @@ function ThrottleZoneLines({ processed }: { processed: ProcessedTrack }) {
     }),
   [processed, cx, cy]);
 
+  const labelPos = useMemo(() => {
+    if (!segments.length) return null;
+    const longest = segments.reduce((prev, curr) => (curr.length > prev.length ? curr : prev));
+    return longest.length > 0 ? longest[Math.floor(longest.length / 2)] : null;
+  }, [segments]);
+
   if (!show) return null;
   return (
     <>
       {segments.map((pts, i) =>
         pts.length > 1 ? <Line key={`t${i}`} points={pts} color="#44FF44" lineWidth={5} /> : null
       )}
+      {labelPos && <ZoneLabel position={labelPos} label="THROTTLE ZONE" color="#44FF44" />}
     </>
   );
 }
@@ -319,12 +377,19 @@ function DRSZones({ processed }: { processed: ProcessedTrack }) {
     });
   }, [processed, cx, cy]);
 
+  const labelPos = useMemo(() => {
+    if (!segments.length) return null;
+    const longest = segments.reduce((prev, curr) => (curr.length > prev.length ? curr : prev));
+    return longest.length > 0 ? longest[Math.floor(longest.length / 2)] : null;
+  }, [segments]);
+
   if (!show) return null;
   return (
     <>
       {segments.map((pts, i) =>
         pts.length > 1 ? <Line key={i} points={pts} color="#00D2FF" lineWidth={6} opacity={0.6} transparent /> : null
       )}
+      {labelPos && <ZoneLabel position={labelPos} label="DRS ZONE" color="#00D2FF" />}
     </>
   );
 }
@@ -336,7 +401,7 @@ function SpeedZones({ processed }: { processed: ProcessedTrack }) {
   const { fastZones, slowZones } = useAppStore((s) => s.filters);
   const { cx, cy } = processed.bounds;
 
-  const { fast, slow } = useMemo(() => {
+  const { fast, slow, fastLabel, slowLabel } = useMemo(() => {
     const n = processed.speeds.length;
     const t20 = processed.minSpeed + (processed.maxSpeed - processed.minSpeed) * 0.2;
     const t80 = processed.minSpeed + (processed.maxSpeed - processed.minSpeed) * 0.8;
@@ -347,13 +412,28 @@ function SpeedZones({ processed }: { processed: ProcessedTrack }) {
       if (processed.speeds[i] >= t80) f.push(v);
       if (processed.speeds[i] <= t20) s.push(v);
     }
-    return { fast: f, slow: s };
+    return { 
+      fast: f, 
+      slow: s,
+      fastLabel: f.length > 0 ? f[Math.floor(f.length / 2)] : null,
+      slowLabel: s.length > 0 ? s[Math.floor(s.length / 2)] : null
+    };
   }, [processed, cx, cy]);
 
   return (
     <>
-      {fastZones && fast.length > 1 && <Line points={fast} color="#39FF14" lineWidth={5} opacity={0.6} transparent />}
-      {slowZones && slow.length > 1 && <Line points={slow} color="#7030FF" lineWidth={5} opacity={0.6} transparent />}
+      {fastZones && fast.length > 1 && (
+        <>
+          <Line points={fast} color="#39FF14" lineWidth={5} opacity={0.6} transparent />
+          {fastLabel && <ZoneLabel position={fastLabel} label="FAST ZONE" color="#39FF14" />}
+        </>
+      )}
+      {slowZones && slow.length > 1 && (
+        <>
+          <Line points={slow} color="#7030FF" lineWidth={5} opacity={0.6} transparent />
+          {slowLabel && <ZoneLabel position={slowLabel} label="SLOW ZONE" color="#7030FF" />}
+        </>
+      )}
     </>
   );
 }
