@@ -127,8 +127,11 @@ export function optimizeRacingLine(
   const n = trackPoints.length;
   const line: [number, number][] = trackPoints.map(p => [...p] as [number, number]);
 
+  // Max allowed deviation from the corresponding centerline point
+  const trackWidth = 12;
+
   for (let iter = 0; iter < iterations; iter++) {
-    const lr = 0.5 * (1 - iter / iterations * 0.7); // decaying learning rate
+    const lr = 0.3 * (1 - iter / iterations * 0.7); // decaying learning rate
     const eps = 0.5;
 
     for (let i = 0; i < n; i++) {
@@ -154,65 +157,68 @@ export function optimizeRacingLine(
       line[i][0] -= lr * gradX;
       line[i][1] -= lr * gradY;
 
-      // Clamp: stay within trackWidth of nearest track point
-      const trackWidth = 12;
-      let nearestIdx = 0;
-      let nearestDist = Infinity;
-      let projX = 0, projY = 0;
-      
-      for (let j = 0; j < trackPoints.length; j++) {
+      // Clamp: anchor to the CORRESPONDING centerline point (not any nearest).
+      // We search within a small local window around point i.
+      const windowSize = Math.max(3, Math.floor(n * 0.08));
+      let bestDist = Infinity;
+      let bestProjX = trackPoints[i][0];
+      let bestProjY = trackPoints[i][1];
+
+      for (let k = -windowSize; k <= windowSize; k++) {
+        const j = (i + k + n) % n;
+        const jNext = (j + 1) % n;
         const curr = trackPoints[j];
-        const next = trackPoints[(j + 1) % trackPoints.length];
-        
+        const next = trackPoints[jNext];
+
         const dx = next[0] - curr[0];
         const dy = next[1] - curr[1];
         const lenSq = dx * dx + dy * dy;
-        
+
+        let px: number, py: number;
         if (lenSq > 0) {
-          const t = Math.max(0, Math.min(1, 
+          const t = Math.max(0, Math.min(1,
             ((line[i][0] - curr[0]) * dx + (line[i][1] - curr[1]) * dy) / lenSq
           ));
-          projX = curr[0] + t * dx;
-          projY = curr[1] + t * dy;
+          px = curr[0] + t * dx;
+          py = curr[1] + t * dy;
         } else {
-          projX = curr[0];
-          projY = curr[1];
+          px = curr[0];
+          py = curr[1];
         }
-        
-        const distX = line[i][0] - projX;
-        const distY = line[i][1] - projY;
+
+        const distX = line[i][0] - px;
+        const distY = line[i][1] - py;
         const d = distX * distX + distY * distY;
-        
-        if (d < nearestDist) {
-          nearestDist = d;
-          nearestIdx = j;
-          if (lenSq > 0) {
-            const t = Math.max(0, Math.min(1, 
-              ((line[i][0] - curr[0]) * dx + (line[i][1] - curr[1]) * dy) / lenSq
-            ));
-            projX = curr[0] + t * dx;
-            projY = curr[1] + t * dy;
-          }
+
+        if (d < bestDist) {
+          bestDist = d;
+          bestProjX = px;
+          bestProjY = py;
         }
       }
-      
-      nearestDist = Math.sqrt(nearestDist);
-      if (nearestDist > trackWidth) {
-        const dx = line[i][0] - projX;
-        const dy = line[i][1] - projY;
-        const scale = trackWidth / nearestDist;
-        line[i][0] = projX + dx * scale;
-        line[i][1] = projY + dy * scale;
+
+      bestDist = Math.sqrt(bestDist);
+      if (bestDist > trackWidth) {
+        const dx = line[i][0] - bestProjX;
+        const dy = line[i][1] - bestProjY;
+        const scale = trackWidth / bestDist;
+        line[i][0] = bestProjX + dx * scale;
+        line[i][1] = bestProjY + dy * scale;
       }
     }
   }
 
-  // Smooth the output
-  return smoothLine(line, 5);
+  // Smooth the output WITH boundary constraints
+  return smoothLine(line, trackPoints, trackWidth, 5);
 }
 
 // ─── Smooth a polyline ───────────────────────────────────────
-function smoothLine(line: [number, number][], passes: number = 3): [number, number][] {
+function smoothLine(
+  line: [number, number][],
+  trackPoints: [number, number][],
+  trackWidth: number,
+  passes: number = 3
+): [number, number][] {
   const result = line.map(p => [...p] as [number, number]);
   const n = result.length;
   const window = 3;
@@ -229,6 +235,54 @@ function smoothLine(line: [number, number][], passes: number = 3): [number, numb
       }
       result[i][0] = sx / count;
       result[i][1] = sy / count;
+
+      // Ensure smoothing doesn't pull the line outside the track
+      const windowSize = Math.max(3, Math.floor(n * 0.08));
+      let bestDist = Infinity;
+      let bestProjX = trackPoints[i][0];
+      let bestProjY = trackPoints[i][1];
+
+      for (let k = -windowSize; k <= windowSize; k++) {
+        const j = (i + k + n) % n;
+        const jNext = (j + 1) % n;
+        const curr = trackPoints[j];
+        const next = trackPoints[jNext];
+
+        const dx = next[0] - curr[0];
+        const dy = next[1] - curr[1];
+        const lenSq = dx * dx + dy * dy;
+
+        let px: number, py: number;
+        if (lenSq > 0) {
+          const t = Math.max(0, Math.min(1,
+            ((result[i][0] - curr[0]) * dx + (result[i][1] - curr[1]) * dy) / lenSq
+          ));
+          px = curr[0] + t * dx;
+          py = curr[1] + t * dy;
+        } else {
+          px = curr[0];
+          py = curr[1];
+        }
+
+        const distX = result[i][0] - px;
+        const distY = result[i][1] - py;
+        const d = distX * distX + distY * distY;
+
+        if (d < bestDist) {
+          bestDist = d;
+          bestProjX = px;
+          bestProjY = py;
+        }
+      }
+
+      bestDist = Math.sqrt(bestDist);
+      if (bestDist > trackWidth) {
+        const dx = result[i][0] - bestProjX;
+        const dy = result[i][1] - bestProjY;
+        const scale = trackWidth / bestDist;
+        result[i][0] = bestProjX + dx * scale;
+        result[i][1] = bestProjY + dy * scale;
+      }
     }
   }
   return result;

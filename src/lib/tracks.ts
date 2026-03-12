@@ -55,29 +55,31 @@ const silverstone: TrackData = {
   corners: 18,
   lapRecord: "1:27.097",
   points: [
-    // Bottom straight
-    [80, 320], [160, 318], [240, 316], [315, 314],
-    // Right curve going up
-    [355, 308], [385, 290], [400, 262], [405, 232],
-    // Slight kink right then sweeps left
-    [400, 200], [388, 172], [368, 148],
-    // Top right bump (Copse area bulges outward)
-    [355, 128], [348, 108], [340, 88],
-    // Top straight going left
-    [310, 72], [270, 62], [230, 58], [190, 60],
-    // Top left gentle curve
-    [152, 68], [118, 82], [90, 102],
-    // Left side coming down
-    [68, 130], [52, 162], [46, 196],
-    // Bottom left corner back to start
-    [48, 228], [54, 262], [66, 290], [80, 310],
+    // ── Pre-finish straight (moving right → left, BOTTOM) ──
+    [310, 330], [260, 335], [200, 330], [140, 335],
+    // ── Turn 1 & 2 (Left hook up) ──
+    [95, 320], [60, 275], [40, 215],
+    // ── Sweeping loop (Top) ──
+    [50, 140], [90, 85], [155, 55], [215, 70],
+    // ── Right side dropping down and curling inward ──
+    [260, 115], [255, 165], [220, 200], [170, 210], [135, 195],
+    // ── Kink down to join back straight ──
+    [120, 225], [140, 260], [185, 275],
+    // ── Back straight (Left → Right) ──
+    [245, 270], [305, 280], [375, 270], [435, 285],
+    // ── Right hairpin ──
+    [485, 295], [510, 325], [475, 350], [435, 335],
+    // ── Approach to chicane ──
+    [415, 320],
+    // ── Chicane (two opposite bends at end) ──
+    [395, 350], [370, 380], [340, 360],
   ],
   cornerData: [
-    { type: 'fast',   angle: 55, radius: 60, position: 0.12 },
-    { type: 'medium', angle: 85, radius: 40, position: 0.30 },
-    { type: 'fast',   angle: 60, radius: 55, position: 0.52 },
-    { type: 'medium', angle: 90, radius: 38, position: 0.72 },
-    { type: 'tight',  angle: 110, radius: 22, position: 0.90 },
+    { type: 'fast',   angle: 150, radius: 60, position: 0.15 },
+    { type: 'medium', angle: 90,  radius: 40, position: 0.35 },
+    { type: 'tight',  angle: 110, radius: 25, position: 0.52 },
+    { type: 'hairpin',angle: 160, radius: 15, position: 0.75 },
+    { type: 'tight',  angle: 140, radius: 20, position: 0.92 },
   ],
 };
 // Spa-Francorchamps — legendary Belgian circuit
@@ -90,26 +92,34 @@ const spa: TrackData = {
   corners: 19,
   lapRecord: "1:41.252",
   points: [
-    // ── Top connector arch (left → right) ──
-    [40, 100], [52, 55], [85, 22], [130, 10], [175, 22], [208, 55],
-    // ── Right straight going DOWN ──
-    [220, 100], [220, 150], [220, 200], [220, 250],
-    [220, 300], [220, 350], [220, 400],
-    // ── Big round hook at the bottom (turns RIGHT, clockwise) ──
-    [217, 423], [208, 445], [194, 464],
-    [175, 478], [153, 487], [130, 490],
-    [107, 487], [85, 478], [66, 464],
-    [52, 445], [43, 423],
-    // ── Left straight going UP ──
-    [40, 400], [40, 350], [40, 300], [40, 250],
-    [40, 200], [40, 150], [40, 100],
+    // ── Start/finish straight going right ──
+    [60, 140], [110, 138], [160, 135], [210, 130],
+    // ── Eau Rouge: sharp dip right then kicks UP-LEFT ──
+    [248, 120], [270, 100], [278, 72], [268, 48], [245, 32],
+    // ── Kemmel straight angling up-right ──
+    [218, 24], [280, 18], [340, 22],
+    // ── Big fold RIGHT: sweeps down dramatically ──
+    [375, 38], [398, 68], [408, 105],
+    [405, 148], [388, 182], [362, 208],
+    // ── Mid chicane: jinks LEFT then RIGHT ──
+    [330, 225], [305, 248], [290, 278],
+    [295, 310], [315, 335],
+    // ── Sweeps back LEFT toward bottom ──
+    [308, 365], [285, 388], [252, 400],
+    [215, 405], [175, 402],
+    // ── Tight hairpin fold at bottom-left ──
+    [140, 392], [112, 372], [98, 345],
+    [95, 315], [105, 288],
+    // ── Rises back UP through left side ──
+    [88, 260], [65, 235], [50, 205],
+    [45, 175], [50, 150],
   ],
   cornerData: [
-    { type: 'fast',    angle: 40,  radius: 55, position: 0.04 }, // top arch
-    { type: 'medium',  angle: 85,  radius: 40, position: 0.30 }, // right straight entry
-    { type: 'hairpin', angle: 180, radius: 18, position: 0.55 }, // bottom hook apex
-    { type: 'medium',  angle: 85,  radius: 40, position: 0.78 }, // left straight entry
-    { type: 'fast',    angle: 40,  radius: 55, position: 0.96 }, // top arch return
+    { type: 'fast',    angle: 55,  radius: 48, position: 0.10 }, // Eau Rouge
+    { type: 'medium',  angle: 95,  radius: 35, position: 0.30 }, // big right fold
+    { type: 'tight',   angle: 120, radius: 22, position: 0.48 }, // mid chicane
+    { type: 'hairpin', angle: 155, radius: 16, position: 0.68 }, // bottom hairpin
+    { type: 'medium',  angle: 80,  radius: 40, position: 0.88 }, // left rise
   ],
 };
 // Bahrain International Circuit — desert night circuit
@@ -122,33 +132,32 @@ const bahrain: TrackData = {
   corners: 15,
   lapRecord: "1:31.447",
   points: [
-    // ── Top straight (left → right) ──
-    [60, 60], [120, 58], [180, 56], [240, 55], [300, 56],
-    // ── Turn 1-2-3 right-side chicane (going down) ──
-    [340, 62], [365, 78], [378, 100],
-    [380, 130], [372, 158],
-    // ── Short straight then tight Turn 4 hairpin ──
-    [355, 180], [348, 200], [352, 222],
-    [365, 240], [378, 255],
-    // ── Descent to Turn 5-6-7 ──
-    [382, 280], [375, 308], [358, 330],
-    [332, 348], [300, 358],
-    // ── Bottom straight (right → left) ──
-    [260, 362], [220, 364], [180, 365], [140, 364], [100, 360],
-    // ── Turn 8-9-10 left-side curves (going up) ──
-    [70, 352], [48, 335], [35, 310],
-    [30, 280], [32, 248],
-    // ── Back straight going up ──
-    [38, 218], [44, 185], [48, 150],
-    // ── Turn 11-12 sweeping left back to start ──
-    [50, 120], [52, 92], [56, 74],
+    // ── Pre-finish straight (moving right → left, LOWER) ──
+    [320, 335], [270, 340], [220, 345], [170, 350], 
+    [120, 355], [85, 350], [55, 335],
+    // ── Turn 1 & 2 (sharp left hook at bottom left) ──
+    [35, 305], [20, 270], [25, 220],
+    // ── Long sweeping left loop (Turns 2-3) ──
+    [45, 150], [80, 85], [140, 45],
+    [195, 35], [245, 45], [285, 75], [290, 115],
+    // ── Turn 3 & 4 (curving down and inward) ──
+    [270, 160], [230, 185], [195, 195],
+    // ── Short straight then Turn 5-6 (kink left then sweep right) ──
+    [160, 205], [145, 220], [165, 225], [200, 220],
+    // ── Back straight going right (TOP, smaller Y) ──
+    [250, 215], [300, 210], [360, 220], [420, 230],
+    // ── Turn 7-8-9 (long sweeping hairpin at far right tail) ──
+    [460, 240], [490, 260], [500, 285],
+    [490, 310], [460, 320], [430, 325],
+    // ── Straight returning left toward finish (BOTTOM, larger Y) ──
+    [390, 330], [360, 335],
   ],
   cornerData: [
-    { type: 'tight',  angle: 120, radius: 28, position: 0.14 },  // T1-2-3 chicane
-    { type: 'hairpin', angle: 160, radius: 18, position: 0.32 },  // T4 hairpin
-    { type: 'medium', angle: 90,  radius: 42, position: 0.52 },  // T5-6-7
-    { type: 'tight',  angle: 110, radius: 30, position: 0.72 },  // T8-9-10
-    { type: 'medium', angle: 70,  radius: 50, position: 0.92 },  // T11-12
+    { type: 'tight',  angle: 120, radius: 25, position: 0.12 },  // T1
+    { type: 'fast',   angle: 160, radius: 80, position: 0.35 },  // Loop T2-T3
+    { type: 'medium', angle: 90,  radius: 35, position: 0.52 },  // T4 inner curve
+    { type: 'medium', angle: 60,  radius: 40, position: 0.65 },  // T5-T6 kink
+    { type: 'hairpin', angle: 170, radius: 15, position: 0.88 },  // Far right hairpin (T9)
   ],
 };
 

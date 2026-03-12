@@ -16,7 +16,8 @@ function TrackSurface({ processed }: { processed: ProcessedTrack }) {
   const geometry = useMemo(() => {
     const pts = processed.centerline;
     const n = pts.length;
-    const hw = 15; // track half-width in coord units
+    const hw = 20; // track half-width in coord units
+
     const vertices: number[] = [];
     const indices: number[] = [];
 
@@ -501,8 +502,8 @@ export default function Track3DScene({ processed }: { processed: ProcessedTrack 
       {/* Track layers (matching f1-sim: surface → racing surface → boundaries → racing line → zones) */}
       <TrackSurface processed={processed} />
       <RacingSurface processed={processed} />
-      <TrackBoundary processed={processed} offset={15} />
-      <TrackBoundary processed={processed} offset={-15} />
+      <TrackBoundary processed={processed} offset={20} />
+      <TrackBoundary processed={processed} offset={-20} />
 
       {/* Racing line and overlays */}
       <RacingLine processed={processed} />
