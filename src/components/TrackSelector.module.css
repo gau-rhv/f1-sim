@@ -1,106 +1,68 @@
 .panel {
-  width: 320px;
-  min-width: 320px;
-  height: 100vh;
-  background: #111111;
-  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 20;
   display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.header {
-  height: 64px;
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-}
-
-.headerLabel {
-  font-family: var(--font-display);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #555555;
+  background: rgba(10, 10, 10, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px;
+  border-radius: 9999px; /* full pill shape */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .list {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.trackRow {
-  width: 100%;
-  height: 72px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  background: transparent;
-  border: none;
-  border-left: 3px solid transparent;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  cursor: pointer;
-  transition: all 120ms cubic-bezier(0.4, 0, 0.2, 1);
-  text-align: left;
-}
-
-.trackRow:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.trackRow.active {
-  border-left-color: #E8002D;
-  background: rgba(255, 255, 255, 0.035);
-}
-
-.trackInfo {
-  display: flex;
-  flex-direction: column;
   gap: 4px;
 }
 
-.trackTop {
+.item {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.flag {
-  font-size: 18px;
-}
-
-.trackName {
+  justify-content: center;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
   font-family: var(--font-display);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
   color: #AAAAAA;
-  transition: color 120ms;
 }
 
-.trackRow.active .trackName {
+.item:hover {
   color: #FFFFFF;
 }
 
-.trackMeta {
-  font-family: var(--font-display);
-  font-size: 10px;
-  color: #555555;
-  padding-left: 26px;
+.item.active {
+  color: #FFFFFF;
 }
 
-.lapTime {
-  font-family: var(--font-data);
-  font-size: 12px;
-  font-weight: 600;
-  color: #555555;
-  font-variant-numeric: tabular-nums;
+.activeBg {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: -1;
 }
 
-.trackRow.active .lapTime {
-  color: #AAAAAA;
+/* Add a subtle red indicator to active item */
+.activeIndicator {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 2px;
+  background-color: #E8002D;
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
 }

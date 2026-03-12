@@ -40,6 +40,7 @@
 
   /* Typography */
   --font-display:        'Titillium Web', sans-serif;
+  --font-heading:        'Notable', sans-serif;
   --font-data:           'Titillium Web', monospace;
 
   /* Spacing Scale (8pt grid) */
@@ -62,4 +63,8 @@
   --shadow-red-md:  0 0 30px rgba(232, 0, 45, 0.40);
   --shadow-red-lg:  0 0 60px rgba(232, 0, 45, 0.30);
   --shadow-card:    0 4px 24px rgba(0, 0, 0, 0.6);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
 }
