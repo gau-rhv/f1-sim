@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { TyreCompound } from '@/lib/strategyEngine';
 
 interface Filters {
   racingLine: boolean;
@@ -15,6 +16,11 @@ interface AppState {
   activeTrack: string;
   setActiveTrack: (name: string) => void;
 
+  tyre: TyreCompound;
+  setTyre: (tyre: TyreCompound) => void;
+  temperature: number;
+  setTemperature: (temp: number) => void;
+
   isZoomed: boolean;
   zoomTarget: [number, number, number] | null;
   setZoomed: (zoomed: boolean, target?: [number, number, number]) => void;
@@ -29,6 +35,11 @@ interface AppState {
 export const useAppStore = create<AppState>((set) => ({
   activeTrack: 'MONZA',
   setActiveTrack: (name) => set({ activeTrack: name, isZoomed: false, zoomTarget: null }),
+
+  tyre: 'dry-medium',
+  setTyre: (tyre) => set({ tyre }),
+  temperature: 28, // Default mid temp for MONZA
+  setTemperature: (temp) => set({ temperature: temp }),
 
   isZoomed: false,
   zoomTarget: null,

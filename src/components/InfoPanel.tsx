@@ -22,9 +22,9 @@ export default function InfoPanel({
 
   const modelTrack = trackMapAppToStrategy[track.name];
   const strategyInput = modelTrack 
-    ? { track: modelTrack, tyre: 'dry-medium' as const, temperature: Math.round((TRACKS[modelTrack].tempMin + TRACKS[modelTrack].tempMax) / 2) } 
+    ? { track: modelTrack, tyre: useAppStore((s) => s.tyre), temperature: useAppStore((s) => s.temperature) } 
     // Fallback to Spa defaults if unrecognized
-    : { track: 'spa' as const, tyre: 'dry-medium' as const, temperature: 23 };
+    : { track: 'spa' as const, tyre: useAppStore((s) => s.tyre), temperature: useAppStore((s) => s.temperature) };
 
   const strategy = predictStrategy(strategyInput);
   

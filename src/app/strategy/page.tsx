@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Gauge, Thermometer, Flag, Timer } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import {
@@ -36,8 +36,10 @@ export default function StrategyPage() {
   };
 
   const track: Track = trackMapAppToStrategy[activeTrackName] || 'spa';
-  const [tyre, setTyre] = useState<TyreCompound>('dry-medium');
-  const [temperature, setTemperature] = useState<number>(22);
+  const tyre = useAppStore((s) => s.tyre);
+  const setTyre = useAppStore((s) => s.setTyre);
+  const temperature = useAppStore((s) => s.temperature);
+  const setTemperature = useAppStore((s) => s.setTemperature);
 
   const currentTrack = TRACKS[track];
 
