@@ -111,7 +111,7 @@ function CircuitEnvironment({ processed }: { processed: ProcessedTrack }) {
     list.push({ p: new THREE.Vector3(sx - cx + offX, 0, sy - cy + offZ), r: angle });
 
     // 2. Corner Grandstands
-    processed.cornerData.forEach((c: CornerData, i: number) => {
+    processed.cornerData?.forEach((c: CornerData, i: number) => {
       if (i % 2 === 0) { // Every other corner
         const idx = Math.floor(c.position * processed.centerline.length);
         const [px, py] = processed.centerline[idx];

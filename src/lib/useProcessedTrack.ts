@@ -32,9 +32,9 @@ export interface ProcessedTrack {
 const trackCache = new Map<string, ProcessedTrack>();
 
 export function processTrack(track: TrackData): ProcessedTrack {
-  if (trackCache.has(track.id)) {
-    return trackCache.get(track.id)!;
-  }
+  // if (trackCache.has(track.id)) {
+  //   return trackCache.get(track.id)!;
+  // }
 
   const t0 = performance.now();
 
