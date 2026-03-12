@@ -181,7 +181,7 @@ function RacingLine({ processed }: { processed: ProcessedTrack }) {
   const filters = useAppStore((s) => s.filters);
   const { cx, cy } = processed.bounds;
 
-  const { points, colors } = useMemo(() => {
+  const { points, colors, speedUpPos, slowUpPos } = useMemo(() => {
     const n = processed.racingLine.length;
     const pts: THREE.Vector3[] = [];
     const cols: [number, number, number][] = [];
@@ -220,12 +220,41 @@ function RacingLine({ processed }: { processed: ProcessedTrack }) {
 
     pts.push(pts[0].clone());
     cols.push(cols[0]);
-    return { points: pts, colors: cols };
+
+    let maxAccIdx = 0;
+    let minAccIdx = 0;
+    for (let i = 1; i < n; i++) {
+        if (accels[i] > accels[maxAccIdx]) maxAccIdx = i;
+        if (accels[i] < accels[minAccIdx]) minAccIdx = i;
+    }
+
+    const speedUpPos = new THREE.Vector3(
+        processed.racingLine[maxAccIdx][0] - cx, 
+        0.3, 
+        processed.racingLine[maxAccIdx][1] - cy
+    );
+    const slowUpPos = new THREE.Vector3(
+        processed.racingLine[minAccIdx][0] - cx, 
+        0.3, 
+        processed.racingLine[minAccIdx][1] - cy
+    );
+
+    return { points: pts, colors: cols, speedUpPos, slowUpPos };
   }, [processed, cx, cy, filters.speedGradient]);
 
   if (!filters.racingLine && !filters.speedGradient) return null;
 
-  return <Line points={points} vertexColors={colors} lineWidth={3.5} />;
+  return (
+    <>
+      <Line points={points} vertexColors={colors} lineWidth={3.5} />
+      {filters.speedGradient && (
+        <>
+          <ZoneLabel position={speedUpPos} label="SPEED UP ZONE" color="#FF8C00" />
+          <ZoneLabel position={slowUpPos} label="SLOW DOWN ZONE" color="#E8002D" />
+        </>
+      )}
+    </>
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════
