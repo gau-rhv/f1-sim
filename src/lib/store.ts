@@ -30,6 +30,14 @@ interface AppState {
 
   computeTime: number;
   setComputeTime: (ms: number) => void;
+  carProgress: number;
+  setCarProgress: (t: number) => void;
+  allCarsProgress: number[];
+  setAllCarsProgress: (progresses: number[]) => void;
+  currentSpeed: number;
+  setCurrentSpeed: (speed: number) => void;
+  currentLap: number;
+  setLap: (lap: number) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -61,4 +69,12 @@ export const useAppStore = create<AppState>((set) => ({
 
   computeTime: 0,
   setComputeTime: (ms) => set({ computeTime: ms }),
+  carProgress: 0,
+  setCarProgress: (t) => set({ carProgress: t }),
+  allCarsProgress: [0, 0, 0, 0],
+  setAllCarsProgress: (progresses) => set({ allCarsProgress: progresses }),
+  currentSpeed: 0,
+  setCurrentSpeed: (speed) => set({ currentSpeed: speed }),
+  currentLap: 1,
+  setLap: (lap) => set({ currentLap: lap }),
 }));

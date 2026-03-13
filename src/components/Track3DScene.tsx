@@ -366,18 +366,67 @@ function ApexMarkers({ processed }: { processed: ProcessedTrack }) {
 // ═══════════════════════════════════════════════════════════════
 function StartFinish({ processed }: { processed: ProcessedTrack }) {
   const { cx, cy } = processed.bounds;
-  const pos = useMemo(() => {
-    const [x, y] = processed.racingLine[0];
-    return new THREE.Vector3(x - cx, 0.3, y - cy);
+  
+  const texture = useMemo(() => {
+    if (typeof document === 'undefined') return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    const rows = 4;
+    const cols = 16;
+    const w = canvas.width / cols;
+    const h = canvas.height / rows;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        ctx.fillStyle = (r + c) % 2 === 0 ? '#ffffff' : '#111111';
+        ctx.fillRect(c * w, r * h, w, h);
+      }
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    return tex;
+  }, []);
+
+  // Match the logic from TrackSurface for perfect alignment
+  const { pos, rot } = useMemo(() => {
+    const pts = processed.centerline;
+    const n = pts.length;
+    const i = 0;
+    
+    const prev = pts[(i - 1 + n) % n];
+    const curr = pts[i];
+    const next = pts[(i + 1) % n];
+    const dx = next[0] - prev[0];
+    const dy = next[1] - prev[1];
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    
+    // Rotation should be perpendicular to the track direction
+    const angle = Math.atan2(dx, dy);
+    
+    return {
+      pos: new THREE.Vector3(curr[0] - cx, 0.05, curr[1] - cy),
+      rot: angle
+    };
   }, [processed, cx, cy]);
 
   return (
-    <group position={pos}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[4, 3]} />
-        <meshBasicMaterial color="#00FF00" />
-      </mesh>
-    </group>
+    <mesh 
+      position={pos} 
+      rotation={[-Math.PI / 2, 0, rot]}
+    >
+      <planeGeometry args={[40, 6]} />
+      <meshStandardMaterial 
+        map={texture} 
+        transparent 
+        opacity={0.9} 
+        polygonOffset 
+        polygonOffsetFactor={-4}
+      />
+    </mesh>
   );
 }
 
@@ -471,55 +520,315 @@ function SpeedZones({ processed }: { processed: ProcessedTrack }) {
 // ═══════════════════════════════════════════════════════════════
 //  ANIMATED CAR
 // ═══════════════════════════════════════════════════════════════
-function AnimatedCar({ processed }: { processed: ProcessedTrack }) {
-  const car = useRef<THREE.Group>(null);
+// ═══════════════════════════════════════════════════════════════
+//  CAR MODEL COMPONENT
+// ═══════════════════════════════════════════════════════════════
+function CarModel({ color, scale = 1.8, wheelRef }: { color: string; scale?: number; wheelRef: React.MutableRefObject<(THREE.Mesh | null)[]> }) {
+  return (
+    <group scale={scale}>
+      {/* Underbody / Floor / Plank — Grounding the car */}
+      <mesh position={[0, -0.28, 0.2]}>
+        <boxGeometry args={[2.0, 0.1, 4.0]} />
+        <meshStandardMaterial color="#080808" metalness={0.9} roughness={0.1} />
+      </mesh>
+
+      {/* Diffuser (rear kicks up) */}
+      <mesh position={[0, -0.15, -1.8]} rotation={[-0.2, 0, 0]}>
+        <boxGeometry args={[1.8, 0.2, 0.8]} />
+        <meshStandardMaterial color="#050505" />
+      </mesh>
+
+      {/* Main Chassis / Tub - Z Forward */}
+      <mesh castShadow position={[0, 0, -0.2]}>
+        <boxGeometry args={[0.9, 0.5, 3.4]} />
+        <meshStandardMaterial color={color} metalness={0.7} roughness={0.2} />
+      </mesh>
+      
+      {/* Nose cone - tapered */}
+      <mesh position={[0, -0.1, 2.1]} rotation={[-0.05, 0, 0]}>
+        <boxGeometry args={[0.6, 0.3, 1.8]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+
+      {/* Cockpit Surround */}
+      <mesh position={[0, 0.25, 0.8]}>
+        <boxGeometry args={[0.85, 0.2, 1.2]} />
+        <meshStandardMaterial color="#111" />
+      </mesh>
+
+      {/* Driver Helmet */}
+      <group position={[0, 0.45, 0.6]}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.22, 16, 16]} />
+          <meshStandardMaterial color="#f0f0f0" metalness={0.8} roughness={0.1} />
+        </mesh>
+        <mesh position={[0, 0.05, 0.15]}>
+          <boxGeometry args={[0.25, 0.12, 0.1]} />
+          <meshStandardMaterial color="#111" />
+        </mesh>
+      </group>
+
+      {/* Front Wing Complex */}
+      <group position={[0, -0.24, 3.0]}>
+        {/* Main plane */}
+        <mesh><boxGeometry args={[2.5, 0.05, 0.6]} /><meshStandardMaterial color="#111" /></mesh>
+        {/* Upper flaps */}
+        <mesh position={[0, 0.1, 0.05]} rotation={[-0.15, 0, 0]}>
+          <boxGeometry args={[2.4, 0.03, 0.4]} />
+          <meshStandardMaterial color={color} />
+        </mesh>
+        {/* Endplates */}
+        <mesh position={[1.25, 0.2, 0.1]}><boxGeometry args={[0.04, 0.5, 0.7]} /><meshStandardMaterial color={color} /></mesh>
+        <mesh position={[-1.25, 0.2, 0.1]}><boxGeometry args={[0.04, 0.5, 0.7]} /><meshStandardMaterial color={color} /></mesh>
+      </group>
+
+      {/* Bargeboards / Sidepod deflectors */}
+      <group position={[0.7, -0.1, 1.4]}>
+        <mesh rotation={[0, 0.1, 0]}><boxGeometry args={[0.05, 0.6, 0.8]} /><meshStandardMaterial color="#111" /></mesh>
+      </group>
+      <group position={[-0.7, -0.1, 1.4]}>
+        <mesh rotation={[0, -0.1, 0]}><boxGeometry args={[0.05, 0.6, 0.8]} /><meshStandardMaterial color="#111" /></mesh>
+      </group>
+
+      {/* Sidepods - sculpted look */}
+      <mesh position={[0.75, -0.05, 0.2]} rotation={[0, 0.1, 0]}>
+        <boxGeometry args={[0.5, 0.45, 2.0]} />
+        <meshStandardMaterial color={color} metalness={0.6} />
+      </mesh>
+      <mesh position={[-0.75, -0.05, 0.2]} rotation={[0, -0.1, 0]}>
+        <boxGeometry args={[0.5, 0.45, 2.0]} />
+        <meshStandardMaterial color={color} metalness={0.6} />
+      </mesh>
+
+      {/* Side Mirrors */}
+      <mesh position={[0.55, 0.35, 1.1]}><boxGeometry args={[0.15, 0.08, 0.1]} /><meshStandardMaterial color={color} /></mesh>
+      <mesh position={[-0.55, 0.35, 1.1]}><boxGeometry args={[0.15, 0.08, 0.1]} /><meshStandardMaterial color={color} /></mesh>
+
+      {/* Rear Wing Complex */}
+      <group position={[0, 0.55, -1.8]}>
+        {/* Main profile */}
+        <mesh><boxGeometry args={[2.0, 0.08, 0.6]} /><meshStandardMaterial color={color} /></mesh>
+        {/* Top flap (DRS) */}
+        <mesh position={[0, 0.15, -0.1]} rotation={[-0.1, 0, 0]}>
+          <boxGeometry args={[1.9, 0.05, 0.4]} />
+          <meshStandardMaterial color="#111" />
+        </mesh>
+        {/* Endplates */}
+        <mesh position={[1.0, -0.35, 0]}><boxGeometry args={[0.05, 1.0, 0.8]} /><meshStandardMaterial color="#111" /></mesh>
+        <mesh position={[-1.0, -0.35, 0]}><boxGeometry args={[0.05, 1.0, 0.8]} /><meshStandardMaterial color="#111" /></mesh>
+      </group>
+
+      {/* Halo Protection */}
+      <mesh position={[0, 0.42, 0.65]} rotation={[0.1, 0, 0]}>
+        <torusGeometry args={[0.42, 0.07, 12, 32, Math.PI]} />
+        <meshStandardMaterial color="#111" metalness={0.9} />
+      </mesh>
+      {/* Halo center pillar */}
+      <mesh position={[0, 0.3, 1.05]}>
+        <boxGeometry args={[0.06, 0.3, 0.06]} />
+        <meshStandardMaterial color="#111" />
+      </mesh>
+
+      {/* Engine Intake / Airbox */}
+      <mesh position={[0, 0.65, -0.2]} rotation={[-0.15, 0, 0]}>
+        <boxGeometry args={[0.5, 0.35, 1.0]} />
+        <meshStandardMaterial color="#111" />
+      </mesh>
+
+      {/* Rear T-cam */}
+      <mesh position={[0, 0.85, -0.4]}>
+        <boxGeometry args={[0.2, 0.08, 0.15]} />
+        <meshStandardMaterial color="#FFD700" />
+      </mesh>
+
+      {/* Dynamic Spinning Wheels with Hub Caps */}
+      {[ [0.9, -0.15, 1.45], [-0.9, -0.15, 1.45], [0.9, -0.15, -1.3], [-0.9, -0.15, -1.3] ].map((pos, i) => (
+        <group key={i} position={pos as any}>
+          <group rotation={[0, 0, Math.PI / 2]}>
+            <mesh ref={el => { wheelRef.current[i] = el; }}>
+              <cylinderGeometry args={[0.5, 0.5, 0.55, 24]} />
+              <meshStandardMaterial color="#121212" roughness={0.6} metalness={0.1} />
+              {/* Visual rim detail */}
+              <mesh position={[0, 0.28, 0]}>
+                <cylinderGeometry args={[0.3, 0.3, 0.05, 12]} />
+                <meshStandardMaterial color="#333" />
+              </mesh>
+            </mesh>
+          </group>
+        </group>
+      ))}
+    </group>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ANIMATED CARS (Multi-Car Racing)
+// ═══════════════════════════════════════════════════════════════
+function AnimatedCars({ processed }: { processed: ProcessedTrack }) {
+  const cars = [
+    { ref: useRef<THREE.Group>(null), wheels: useRef<(THREE.Mesh | null)[]>([]), color: "#E8002D", type: 'player' },
+    { ref: useRef<THREE.Group>(null), wheels: useRef<(THREE.Mesh | null)[]>([]), color: "#0066FF", type: 'ai', offset: 5 },
+    { ref: useRef<THREE.Group>(null), wheels: useRef<(THREE.Mesh | null)[]>([]), color: "#C0C0C0", type: 'ai', offset: -6 },
+    { ref: useRef<THREE.Group>(null), wheels: useRef<(THREE.Mesh | null)[]>([]), color: "#FF8700", type: 'ai', offset: 8 },
+  ];
+  
   const hl = useRef<THREE.PointLight>(null);
   const tl = useRef<THREE.PointLight>(null);
-  const tRef = useRef(0);
+  const { setCarProgress, setAllCarsProgress, setCurrentSpeed, currentLap, setLap } = useAppStore();
+  
+  const tRefs = useRef([0, 0.98, 0.96, 0.94]); // Initial staggered positions
+  const lateralRefs = useRef([0, 6, -6, 10]); // Player is 0, others have base offsets
   const posVec = useMemo(() => new THREE.Vector3(), []);
   const lookVec = useMemo(() => new THREE.Vector3(), []);
-  const hlVec = useMemo(() => new THREE.Vector3(), []);
-  const tlVec = useMemo(() => new THREE.Vector3(), []);
 
-  useFrame((_, dt) => {
-    if (!car.current) return;
+  // Pre-calculate base centerline for AI reference
+  const centerlinePts = useMemo(() => {
+    const { cx, cy } = processed.bounds;
+    return processed.centerline.map(p => new THREE.Vector3(p[0] - cx, 0.3, p[1] - cy));
+  }, [processed]);
+  
+  const centerlineCurve = useMemo(() => new THREE.CatmullRomCurve3(centerlinePts, true), [centerlinePts]);
+
+  useFrame((state, dt) => {
     const n = processed.racingLine.length;
-    const idx = Math.floor(tRef.current * n) % n;
-    const speed = processed.speeds[idx] || 200;
-    tRef.current += dt * 0.04 * (speed / 340);
-    if (tRef.current > 1) tRef.current -= 1;
+    
+    // 1. Calculate Player Progress First (i=0)
+    const playerT = tRefs.current[0];
+    const playerIdx = Math.floor(playerT * n) % n;
+    const physicsSpeed = processed.speeds[playerIdx] || 200;
+    const playerSpeed = physicsSpeed; // Compatibility for AI logic
+    
+    // Constant for mapping KM/H to simulation progress. Increased to 0.0008 for more speed.
+    const progressPerKmh = 0.0008;
 
-    const p = processed.curve3D.getPointAt(tRef.current, posVec);
-    const t = processed.curve3D.getTangentAt(tRef.current, lookVec);
-    car.current.position.set(p.x, 1, p.z);
-    car.current.lookAt(p.x + t.x, 1, p.z + t.z);
+    // Hard-coded Dual-Range Speedometer (Strictly synced with UI limits):
+    // Use the actual processed.minSpeed shown in the UI as the floor (e.g., 96 km/h)
+    let displaySpeed = 0;
+    const slowThreshold = processed.minSpeed + 20; 
+    
+    if (physicsSpeed < slowThreshold) {
+      // Map physics min to track min (e.g. 96) to match the UI exactly
+      const t = (physicsSpeed - processed.minSpeed) / 20;
+      displaySpeed = processed.minSpeed + t * 15; // Range: [MinSpeed, MinSpeed + 15]
+    } else {
+      // "Straight up" to 230+ but capped at the track's true Max Speed
+      const t = (physicsSpeed - slowThreshold) / (processed.maxSpeed - slowThreshold);
+      displaySpeed = 230 + t * (processed.maxSpeed - 230);
+    }
+    
+    tRefs.current[0] = (playerT + dt * physicsSpeed * progressPerKmh) % 1;
+    setCarProgress(tRefs.current[0]);
+    setCurrentSpeed(displaySpeed);
 
-    if (hl.current) hl.current.position.set(p.x + t.x * 5, 2, p.z + t.z * 5);
-    if (tl.current) tl.current.position.set(p.x - t.x * 3, 1.5, p.z - t.z * 3);
+    // Lap detection for player
+    if (playerT > 0.8 && tRefs.current[0] < 0.2) {
+      if (currentLap < 70) setLap(currentLap + 1);
+    }
+
+    // 2. Update and render all cars
+    const playerPos = new THREE.Vector3();
+    if (cars[0].ref.current) playerPos.copy(cars[0].ref.current.position);
+
+    cars.forEach((car, i) => {
+      if (!car.ref.current) return;
+      
+      let speed = playerSpeed; 
+
+      if (i > 0) {
+        // AI "Sticky" Lead Logic:
+        // They target being exactly side-by-side (targetTrailingDist = 0)
+        // But if they creep ahead (deltaT < 0), they are aggressively slowed.
+        const t = tRefs.current[i];
+        const distT = tRefs.current[0] - t;
+        
+        let deltaT = distT;
+        if (deltaT > 0.5) deltaT -= 1;
+        if (deltaT < -0.5) deltaT += 1;
+
+        const targetTrailingDist = 0.0; // Target exactly side-by-side
+        const magnetStrength = 0.7; // Slightly less rigid
+        const error = deltaT + targetTrailingDist;
+        
+        const variation = Math.sin(state.clock.getElapsedTime() * 0.2 + i * 1.5) * 0.03;
+        const targetSpeedMultiplier = 1.0 + (error * magnetStrength) + variation;
+        
+        // Racing Logic: 
+        // Laps 1-69: Side-by-side racing is encouraged.
+        // Lap 70: Red (Player) MUST win.
+        let leadClamp = deltaT < -0.002 ? 0.85 : 1.15; // Looser clamp for general racing
+
+        if (currentLap === 70 && playerT > 0.94) {
+          // Final straight of final lap: Strict Red victory enforcement
+          if (deltaT < 0.01) leadClamp = 0.6; 
+        }
+
+        speed = playerSpeed * THREE.MathUtils.clamp(targetSpeedMultiplier, 0.7, leadClamp);
+        tRefs.current[i] = (tRefs.current[i] + dt * speed * progressPerKmh) % 1;
+      }
+
+      // 3. Hard World-Space Collision Repulsion
+      let p = centerlineCurve.getPointAt(tRefs.current[i], posVec);
+      let tangent = centerlineCurve.getTangentAt(tRefs.current[i], lookVec);
+      const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+      
+      if (i === 0) {
+        // Player: Racing line
+        p.copy(processed.curve3D.getPointAt(tRefs.current[i], posVec));
+        tangent.copy(processed.curve3D.getTangentAt(tRefs.current[i], lookVec));
+      } else {
+        // AI: Persistent Lateral Position
+        const carMeta = (car as any);
+        const baseOffset = carMeta.offset || (i % 2 === 0 ? 6 : -6);
+        let currentOffset = lateralRefs.current[i];
+        
+        // COLLISION CHECK: Real-time world space
+        // We check the distance between AI's potential position and player's actual position
+        const worldPosAI = p.clone().add(normal.clone().multiplyScalar(currentOffset));
+        const distSq = worldPosAI.distanceToSquared(playerPos);
+        
+        // Hard bubble: 5m radius (distSq < 25)
+        if (distSq < 30) {
+          const toPlayer = playerPos.clone().sub(p);
+          const playerLat = toPlayer.dot(normal);
+          // Force push AWAY from the player's lateral coordinate
+          const repulsionForce = currentOffset > playerLat ? 0.6 : -0.6;
+          currentOffset += repulsionForce;
+        }
+
+        // Return to "preferred" side if safe
+        currentOffset = THREE.MathUtils.lerp(currentOffset, baseOffset, 0.04);
+        currentOffset = THREE.MathUtils.clamp(currentOffset, -15, 15);
+        lateralRefs.current[i] = currentOffset;
+        
+        p.add(normal.multiplyScalar(currentOffset));
+      }
+      
+      car.ref.current.position.copy(p);
+      car.ref.current.lookAt(p.x + tangent.x, p.y, p.z + tangent.z);
+
+      // Spin wheels
+      const wheelCircumference = 2.0; 
+      const wheelRotationSpeed = (speed / 3.6) * dt * (1 / wheelCircumference);
+      car.wheels.current.forEach(w => { if (w) w.rotation.y += wheelRotationSpeed; });
+
+      // Update player lights
+      if (i === 0) {
+        if (hl.current) hl.current.position.set(p.x + tangent.x * 5, p.y + 1.2, p.z + tangent.z * 5);
+        if (tl.current) tl.current.position.set(p.x - tangent.x * 3, p.y + 0.6, p.z - tangent.z * 3);
+      }
+    });
+    setAllCarsProgress([...tRefs.current]);
   });
 
   return (
     <>
-      <group ref={car}>
-        <mesh castShadow>
-          <boxGeometry args={[5, 1, 2.2]} />
-          <meshStandardMaterial color="#E8002D" metalness={0.6} roughness={0.2} />
-        </mesh>
-        <mesh position={[0.5, 0.6, 0]}>
-          <boxGeometry args={[1.2, 0.35, 1]} />
-          <meshStandardMaterial color="#111" metalness={0.8} roughness={0.1} />
-        </mesh>
-        <mesh position={[2.8, 0, 0]}>
-          <boxGeometry args={[0.5, 0.1, 2.8]} />
-          <meshStandardMaterial color="#E8002D" />
-        </mesh>
-        <mesh position={[-2.2, 0.8, 0]}>
-          <boxGeometry args={[0.2, 0.6, 2.4]} />
-          <meshStandardMaterial color="#E8002D" />
-        </mesh>
-      </group>
-      <pointLight ref={hl} color="#fff" intensity={3} distance={20} />
-      <pointLight ref={tl} color="#f00" intensity={2} distance={12} />
+      {cars.map((car, i) => (
+        <group key={i} ref={car.ref}>
+          <CarModel color={car.color} wheelRef={car.wheels} />
+        </group>
+      ))}
+      <pointLight ref={hl} color="#fff" intensity={5} distance={30} />
+      <pointLight ref={tl} color="#f00" intensity={4} distance={20} />
     </>
   );
 }
@@ -530,9 +839,9 @@ function AnimatedCar({ processed }: { processed: ProcessedTrack }) {
 function CameraController({ processed }: { processed: ProcessedTrack }) {
   const { camera } = useThree();
   const ctrl = useRef<any>(null);
-  const { isZoomed, zoomTarget } = useAppStore();
+  const { isZoomed, zoomTarget, carProgress } = useAppStore();
   const target = useRef(new THREE.Vector3());
-  const carT = useRef(0);
+  const lookTarget = useRef(new THREE.Vector3());
   const pVec = useMemo(() => new THREE.Vector3(), []);
   const tVec = useMemo(() => new THREE.Vector3(), []);
   const { range } = processed.bounds;
@@ -540,16 +849,20 @@ function CameraController({ processed }: { processed: ProcessedTrack }) {
   // Dynamic camera distance based on track size
   const camDist = range * 0.9;
 
-  useFrame((_, dt) => {
-    carT.current += dt * 0.04;
-    if (carT.current > 1) carT.current -= 1;
-
+  useFrame(() => {
     if (isZoomed && zoomTarget) {
-      const p = processed.curve3D.getPointAt(carT.current % 1, pVec);
-      const t = processed.curve3D.getTangentAt(carT.current % 1, tVec);
-      target.current.set(p.x - t.x * 20, 12, p.z - t.z * 20);
-      camera.position.lerp(target.current, 0.04);
-      camera.lookAt(p.x + t.x * 10, 0, p.z + t.z * 10);
+      // Sync with carProgress from store
+      const p = processed.curve3D.getPointAt(carProgress % 1, pVec);
+      const t = processed.curve3D.getTangentAt(carProgress % 1, tVec);
+      
+      // Chase cam position (offset behind car)
+      target.current.set(p.x - t.x * 25, p.y + 12, p.z - t.z * 25);
+      camera.position.lerp(target.current, 0.1);
+      
+      // Look at the car (slightly ahead of it for smoother feel)
+      lookTarget.current.set(p.x + t.x * 12, p.y + 2, p.z + t.z * 12);
+      camera.lookAt(lookTarget.current);
+      
       if (ctrl.current) ctrl.current.enabled = false;
     } else {
       target.current.set(0, camDist, camDist * 0.7);
@@ -621,8 +934,8 @@ export default function Track3DScene({ processed }: { processed: ProcessedTrack 
       <ThrottleZoneLines processed={processed} />
       <StartFinish processed={processed} />
 
-      {/* Car */}
-      <AnimatedCar processed={processed} />
+      {/* Cars */}
+      <AnimatedCars processed={processed} />
 
       {/* Filter layers */}
       <ApexMarkers processed={processed} />

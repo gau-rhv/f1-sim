@@ -28,6 +28,67 @@
   color: #ffffff;
 }
 
+.telemetry {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.lapDisplay {
+  font-family: var(--font-display);
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.lapLabel {
+  font-size: 10px;
+  font-weight: 800;
+  color: #E8002D;
+  letter-spacing: 0.1em;
+}
+
+.lapValue {
+  font-size: 24px;
+  font-weight: 900;
+  color: #fff;
+}
+
+.lapTotal {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+}
+
+.speedLabel {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 800;
+  color: #555;
+  letter-spacing: 0.15em;
+}
+
+.speedValue {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: baseline;
+  text-shadow: 0 0 20px rgba(232, 0, 45, 0.3);
+}
+
+.unit {
+  font-size: 10px;
+  color: #E8002D;
+  margin-left: 4px;
+}
+
 .hints {
   background: rgba(10, 10, 10, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.07);

@@ -23,14 +23,13 @@ export default function InfoPanel({
   const modelTrack = trackMapAppToStrategy[track.name];
   const strategyInput = modelTrack 
     ? { track: modelTrack, tyre: useAppStore((s) => s.tyre), temperature: useAppStore((s) => s.temperature) } 
-    // Fallback to Spa defaults if unrecognized
-    : { track: 'spa' as const, tyre: useAppStore((s) => s.tyre), temperature: useAppStore((s) => s.temperature) };
+    : { track: 'monza' as const, tyre: useAppStore((s) => s.tyre), temperature: useAppStore((s) => s.temperature) };
 
   const strategy = predictStrategy(strategyInput);
   
-  // Calculate scaled min speed based on difference between 3D raw max and strategy max.
-  const topSpeedRatio = strategy.topSpeed / processed.maxSpeed;
-  const scaledMinSpeed = Math.round(processed.minSpeed * topSpeedRatio);
+  // Use processed speeds for 100% sync with the 3D scene
+  const topSpeed = processed.maxSpeed;
+  const minSpeed = processed.minSpeed;
 
   return (
     <div className={styles.panel}>
@@ -54,11 +53,11 @@ export default function InfoPanel({
       <div className={styles.divider} />
       <div className={styles.row}>
         <span className={styles.label}>TOP SPEED</span>
-        <span className={styles.valueRed}>{strategy.topSpeed} km/h</span>
+        <span className={styles.valueRed}>{topSpeed} km/h</span>
       </div>
       <div className={styles.row}>
         <span className={styles.label}>MIN SPEED</span>
-        <span className={styles.valueGreen}>{scaledMinSpeed} km/h</span>
+        <span className={styles.valueGreen}>{minSpeed} km/h</span>
       </div>
       <div className={styles.row}>
         <span className={styles.label}>BRAKING ZONES</span>

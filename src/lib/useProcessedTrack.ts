@@ -41,10 +41,10 @@ export function processTrack(track: TrackData): ProcessedTrack {
   const centerline = interpolateTrack(track.points, 100);
 
   // 2. Optimize racing line (25 iterations for better convergence)
-  const racingLine = optimizeRacingLine(centerline, 25, 320);
+  const racingLine = optimizeRacingLine(centerline, 25, track.maxSpeed);
 
   // 3. Speed profile using f1-sim formula
-  const speeds = computeSpeedProfile(racingLine, track, 320, 1.0);
+  const speeds = computeSpeedProfile(racingLine, track, track.maxSpeed, track.minSpeed, 1.0);
   const minSpeed = Math.min(...speeds);
   const maxSpeed = Math.max(...speeds);
 

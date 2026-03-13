@@ -294,6 +294,7 @@ export function computeSpeedProfile(
   racingLine: [number, number][],
   track: TrackData,
   maxSpeed: number = 320,
+  minSpeed: number = 60, // Passed from track data
   downforce: number = 1.0
 ): number[] {
   const n = racingLine.length;
@@ -304,38 +305,42 @@ export function computeSpeedProfile(
     const pos = i / n;
     const curv = curvatures[i];
 
-    // Find applicable corner
-    let cornerRadius = 200; // default = straight
+    // Find applicable corner with a MUCH tighter search window
+    let cornerRadius = 1200; // Even higher default for maximum speed bias
     for (const corner of track.cornerData) {
       const dist = Math.abs(pos - corner.position);
-      if (dist < 0.08) {
-        cornerRadius = corner.radius;
+      // Tightened window from 0.08 to 0.04 to prevent premature braking
+      if (dist < 0.04) { 
+        const blend = 1.0 - (dist / 0.04);
+        cornerRadius = cornerRadius * (1 - blend) + corner.radius * blend;
         break;
       }
     }
 
-    // f1-sim formula
-    if (curv > 0.005) {
+    // Aggressive speed calculation: only drop speed if curve is truly significant
+    // Threshold lowered to 0.0006 to ignore slight kinks in straights
+    if (curv > 0.0006) { 
       const radiusFromCurv = 1 / (curv + 1e-8);
       const effectiveRadius = Math.min(radiusFromCurv, cornerRadius);
-      const speed = Math.min(maxSpeed, (60 / Math.sqrt(effectiveRadius)) * downforce * 5);
-      speeds.push(Math.max(50, speed));
+      // Higher multiplier (7.5) to keep mid-corner speeds near 200+ where possible
+      const speed = Math.min(maxSpeed, (65 / Math.sqrt(effectiveRadius)) * downforce * 7.5);
+      speeds.push(Math.max(minSpeed, speed)); 
     } else {
       speeds.push(maxSpeed);
     }
   }
 
-  // Smooth speeds (physical constraint: can't instantly change speed)
+  // Smooth speeds - minimal passes to preserve raw peaks
   const smoothed = [...speeds];
-  for (let pass = 0; pass < 8; pass++) {
+  for (let pass = 0; pass < 3; pass++) { // Reduced to 3 passes
     for (let i = 0; i < n; i++) {
       const prev = smoothed[(i - 1 + n) % n];
       const next = smoothed[(i + 1) % n];
-      smoothed[i] = smoothed[i] * 0.5 + (prev + next) * 0.25;
+      smoothed[i] = smoothed[i] * 0.6 + (prev + next) * 0.2;
     }
   }
 
-  return smoothed.map(s => Math.round(Math.max(50, Math.min(maxSpeed, s))));
+  return smoothed.map(s => Math.round(Math.max(minSpeed, Math.min(maxSpeed, s))));
 }
 
 // ─── Braking zones (from f1-sim) ─────────────────────────────

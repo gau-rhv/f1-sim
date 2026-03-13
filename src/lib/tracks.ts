@@ -19,6 +19,8 @@ export interface TrackData {
   lapRecord: string;
   points: [number, number][];
   cornerData: CornerData[];
+  maxSpeed: number; // Top speed for this track in KM/H
+  minSpeed: number; // Minimum speed for tight corners in KM/H
 }
 
 // Monza Grand Prix — tight street circuit
@@ -44,6 +46,8 @@ const monza: TrackData = {
     { type: 'fast', angle: 60, radius: 80, position: 0.7 },
     { type: 'hairpin', angle: 180, radius: 12, position: 0.9 },
   ],
+  maxSpeed: 360,
+  minSpeed: 105,
 };
 
 const silverstone: TrackData = {
@@ -81,6 +85,8 @@ const silverstone: TrackData = {
     { type: 'hairpin',angle: 160, radius: 15, position: 0.75 },
     { type: 'tight',  angle: 140, radius: 20, position: 0.92 },
   ],
+  maxSpeed: 345,
+  minSpeed: 98,
 };
 // Spa-Francorchamps — legendary Belgian circuit
 const spa: TrackData = {
@@ -121,6 +127,8 @@ const spa: TrackData = {
     { type: 'hairpin', angle: 155, radius: 16, position: 0.68 }, // bottom hairpin
     { type: 'medium',  angle: 80,  radius: 40, position: 0.88 }, // left rise
   ],
+  maxSpeed: 355,
+  minSpeed: 95,
 };
 // Bahrain International Circuit — desert night circuit
 const bahrain: TrackData = {
@@ -159,6 +167,8 @@ const bahrain: TrackData = {
     { type: 'medium', angle: 60,  radius: 40, position: 0.65 },  // T5-T6 kink
     { type: 'hairpin', angle: 170, radius: 15, position: 0.88 },  // Far right hairpin (T9)
   ],
+  maxSpeed: 342,
+  minSpeed: 96,
 };
 
 export const tracks: TrackData[] = [monza, silverstone, spa, bahrain];

@@ -9,6 +9,7 @@ import FilterStrip from '@/components/FilterStrip';
 import InfoPanel from '@/components/InfoPanel';
 import SpeedLegend from '@/components/SpeedLegend';
 import ControlsHint from '@/components/ControlsHint';
+import Minimap from '@/components/Minimap';
 import styles from './MapSection.module.css';
 
 const Track3DScene = dynamic(() => import('@/components/Track3DScene'), {
@@ -57,6 +58,7 @@ export default function MapSection() {
               <InfoPanel track={currentTrack} processed={processed} />
               <FilterStrip />
               <SpeedLegend processed={processed} />
+              <Minimap processed={processed} />
             </>
           ) : (
             <div className={styles.loading}>

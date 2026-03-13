@@ -34,7 +34,7 @@ export const TRACKS: Record<Track, TrackConfig> = {
     lapMin: 104,
     lapMax: 110,
     laps: 44,
-    topSpeed: 345,
+    topSpeed: 355,
     lengthKm: 7.004,
   },
   silverstone: {
@@ -44,7 +44,7 @@ export const TRACKS: Record<Track, TrackConfig> = {
     lapMin: 87,
     lapMax: 95,
     laps: 52,
-    topSpeed: 335,
+    topSpeed: 345,
     lengthKm: 5.891,
   },
   bahrain: {
@@ -54,7 +54,7 @@ export const TRACKS: Record<Track, TrackConfig> = {
     lapMin: 88,
     lapMax: 95,
     laps: 57,
-    topSpeed: 330,
+    topSpeed: 342,
     lengthKm: 5.412,
   },
   monza: {
@@ -64,8 +64,8 @@ export const TRACKS: Record<Track, TrackConfig> = {
     lapMin: 78,
     lapMax: 85,
     laps: 53,
-    topSpeed: 365,
-    lengthKm: 5.793,
+    topSpeed: 360,
+    lengthKm: 3.337,
   },
 };
 
