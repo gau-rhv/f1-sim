@@ -38,6 +38,12 @@ interface AppState {
   setCurrentSpeed: (speed: number) => void;
   currentLap: number;
   setLap: (lap: number) => void;
+
+  // Pitstop & Tire Wear
+  allCarsTireWear: number[];
+  setAllCarsTireWear: (wear: number[]) => void;
+  isPitting: boolean[];
+  setIsPitting: (pitting: boolean[]) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -77,4 +83,9 @@ export const useAppStore = create<AppState>((set) => ({
   setCurrentSpeed: (speed) => set({ currentSpeed: speed }),
   currentLap: 1,
   setLap: (lap) => set({ currentLap: lap }),
+
+  allCarsTireWear: [100, 100, 100, 100],
+  setAllCarsTireWear: (wear) => set({ allCarsTireWear: wear }),
+  isPitting: [false, false, false, false],
+  setIsPitting: (pitting) => set({ isPitting: pitting }),
 }));

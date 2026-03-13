@@ -701,30 +701,32 @@ function AnimatedCars({ processed }: { processed: ProcessedTrack }) {
     // Constant for mapping KM/H to simulation progress. Increased to 0.0008 for more speed.
     const progressPerKmh = 0.0008;
 
+    // 1. Handle Player & Overall Physics
+    const { allCarsTireWear, setAllCarsTireWear, isPitting, setIsPitting } = useAppStore.getState();
+    const wearRefs = useRef<number[]>([100, 100, 100, 100]);
+    const pitStateRefs = useRef<('none'|'entry'|'stopping'|'exit')[]>(['none', 'none', 'none', 'none']);
+    const pitTimerRefs = useRef<number[]>([0, 0, 0, 0]);
+
+    // Update store with tire wear every ~1s to save on perf
+    const lastStoreUpdate = useRef(0);
+    if (state.clock.getElapsedTime() - lastStoreUpdate.current > 1.0) {
+      setAllCarsTireWear([...wearRefs.current]);
+      setIsPitting([...pitStateRefs.current.map(s => s !== 'none')]);
+      lastStoreUpdate.current = state.clock.getElapsedTime();
+    }
+
     // Hard-coded Dual-Range Speedometer (Strictly synced with UI limits):
-    // Use the actual processed.minSpeed shown in the UI as the floor (e.g., 96 km/h)
     let displaySpeed = 0;
     const slowThreshold = processed.minSpeed + 20; 
     
     if (physicsSpeed < slowThreshold) {
-      // Map physics min to track min (e.g. 96) to match the UI exactly
       const t = (physicsSpeed - processed.minSpeed) / 20;
-      displaySpeed = processed.minSpeed + t * 15; // Range: [MinSpeed, MinSpeed + 15]
+      displaySpeed = processed.minSpeed + t * 15; 
     } else {
-      // "Straight up" to 230+ but capped at the track's true Max Speed
       const t = (physicsSpeed - slowThreshold) / (processed.maxSpeed - slowThreshold);
       displaySpeed = 230 + t * (processed.maxSpeed - 230);
     }
     
-    tRefs.current[0] = (playerT + dt * physicsSpeed * progressPerKmh) % 1;
-    setCarProgress(tRefs.current[0]);
-    setCurrentSpeed(displaySpeed);
-
-    // Lap detection for player
-    if (playerT > 0.8 && tRefs.current[0] < 0.2) {
-      if (currentLap < 70) setLap(currentLap + 1);
-    }
-
     // 2. Update and render all cars
     const playerPos = new THREE.Vector3();
     if (cars[0].ref.current) playerPos.copy(cars[0].ref.current.position);
@@ -733,85 +735,126 @@ function AnimatedCars({ processed }: { processed: ProcessedTrack }) {
       if (!car.ref.current) return;
       
       let speed = playerSpeed; 
+      const currentState = pitStateRefs.current[i];
+      
+      // Tire Wear Decay
+      const wearDecayBase = 0.02; // Tune for 1-2 stops
+      const decay = (speed / 300) * wearDecayBase * dt;
+      wearRefs.current[i] = Math.max(0, wearRefs.current[i] - decay);
 
-      if (i > 0) {
-        // AI "Sticky" Lead Logic:
-        // They target being exactly side-by-side (targetTrailingDist = 0)
-        // But if they creep ahead (deltaT < 0), they are aggressively slowed.
+      // Pitstop State Machine
+      if (currentState === 'none') {
         const t = tRefs.current[i];
-        const distT = tRefs.current[0] - t;
-        
-        let deltaT = distT;
-        if (deltaT > 0.5) deltaT -= 1;
-        if (deltaT < -0.5) deltaT += 1;
-
-        const targetTrailingDist = 0.0; // Target exactly side-by-side
-        const magnetStrength = 0.7; // Slightly less rigid
-        const error = deltaT + targetTrailingDist;
-        
-        const variation = Math.sin(state.clock.getElapsedTime() * 0.2 + i * 1.5) * 0.03;
-        const targetSpeedMultiplier = 1.0 + (error * magnetStrength) + variation;
-        
-        // Racing Logic: 
-        // Laps 1-69: Side-by-side racing is encouraged.
-        // Lap 70: Red (Player) MUST win.
-        let leadClamp = deltaT < -0.002 ? 0.85 : 1.15; // Looser clamp for general racing
-
-        if (currentLap === 70 && playerT > 0.94) {
-          // Final straight of final lap: Strict Red victory enforcement
-          if (deltaT < 0.01) leadClamp = 0.6; 
+        if (wearRefs.current[i] < 30) { // Trigger pit if wear < 30%
+          const entryDist = Math.abs(t - processed.pitEntryProgress);
+          if (entryDist < 0.005) {
+            pitStateRefs.current[i] = 'entry';
+            tRefs.current[i] = 0; // Reset progress for pitlane curve
+          }
         }
-
-        speed = playerSpeed * THREE.MathUtils.clamp(targetSpeedMultiplier, 0.7, leadClamp);
-        tRefs.current[i] = (tRefs.current[i] + dt * speed * progressPerKmh) % 1;
       }
 
-      // 3. Hard World-Space Collision Repulsion
-      let p = centerlineCurve.getPointAt(tRefs.current[i], posVec);
-      let tangent = centerlineCurve.getTangentAt(tRefs.current[i], lookVec);
-      const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
-      
-      if (i === 0) {
-        // Player: Racing line
-        p.copy(processed.curve3D.getPointAt(tRefs.current[i], posVec));
-        tangent.copy(processed.curve3D.getTangentAt(tRefs.current[i], lookVec));
-      } else {
-        // AI: Persistent Lateral Position
-        const carMeta = (car as any);
-        const baseOffset = carMeta.offset || (i % 2 === 0 ? 6 : -6);
-        let currentOffset = lateralRefs.current[i];
-        
-        // COLLISION CHECK: Real-time world space
-        // We check the distance between AI's potential position and player's actual position
-        const worldPosAI = p.clone().add(normal.clone().multiplyScalar(currentOffset));
-        const distSq = worldPosAI.distanceToSquared(playerPos);
-        
-        // Hard bubble: 5m radius (distSq < 25)
-        if (distSq < 30) {
-          const toPlayer = playerPos.clone().sub(p);
-          const playerLat = toPlayer.dot(normal);
-          // Force push AWAY from the player's lateral coordinate
-          const repulsionForce = currentOffset > playerLat ? 0.6 : -0.6;
-          currentOffset += repulsionForce;
+      const p = new THREE.Vector3();
+      const tangent = new THREE.Vector3();
+
+      if (currentState !== 'none') {
+        // PITLANE LOGIC
+        speed = 80; // Pit limit
+
+        if (currentState === 'entry') {
+          tRefs.current[i] += dt * (speed * progressPerKmh) * 0.8; // Move along pitlane
+          if (tRefs.current[i] > 0.45) { // Halfway through is stopping area
+            pitStateRefs.current[i] = 'stopping';
+            pitTimerRefs.current[i] = 2.5; // 2.5s tire change
+          }
+        } else if (currentState === 'stopping') {
+          speed = 0;
+          pitTimerRefs.current[i] -= dt;
+          if (pitTimerRefs.current[i] <= 0) {
+            pitStateRefs.current[i] = 'exit';
+            wearRefs.current[i] = 100; // Fresh Tires!
+          }
+        } else if (currentState === 'exit') {
+          tRefs.current[i] += dt * (speed * progressPerKmh) * 0.8;
+          if (tRefs.current[i] >= 1.0) {
+            pitStateRefs.current[i] = 'none';
+            tRefs.current[i] = processed.pitExitProgress; // Rejoin main track at exit point
+          }
         }
 
-        // Return to "preferred" side if safe
-        currentOffset = THREE.MathUtils.lerp(currentOffset, baseOffset, 0.04);
-        currentOffset = THREE.MathUtils.clamp(currentOffset, -15, 15);
-        lateralRefs.current[i] = currentOffset;
+        // Get position from Pitlane Curve
+        processed.pitLaneCurve.getPointAt(THREE.MathUtils.clamp(tRefs.current[i], 0, 1), p);
+        processed.pitLaneCurve.getTangentAt(THREE.MathUtils.clamp(tRefs.current[i], 0, 1), tangent);
         
-        p.add(normal.multiplyScalar(currentOffset));
+        // Special case for stopping at assigned pit box
+        if (currentState === 'stopping' || (currentState === 'entry' && tRefs.current[i] > 0.4)) {
+          const boxPos = processed.pitBoxes3D[i];
+          if (boxPos) {
+             const lerpT = THREE.MathUtils.clamp((tRefs.current[i] - 0.4) * 10, 0, 1);
+             p.lerp(boxPos, lerpT);
+          }
+        }
+      } else {
+        // MAIN TRACK LOGIC
+        if (i === 0) {
+          tRefs.current[0] = (playerT + dt * physicsSpeed * progressPerKmh) % 1;
+          setCarProgress(tRefs.current[0]);
+          setCurrentSpeed(displaySpeed);
+          
+          if (playerT > 0.8 && tRefs.current[0] < 0.2) {
+            if (currentLap < 70) setLap(currentLap + 1);
+          }
+        } else {
+          // AI Logic
+          const t = tRefs.current[i];
+          let deltaT = tRefs.current[0] - t;
+          if (deltaT > 0.5) deltaT -= 1;
+          if (deltaT < -0.5) deltaT += 1;
+
+          const error = deltaT;
+          const magnetStrength = 0.7;
+          const variation = Math.sin(state.clock.getElapsedTime() * 0.2 + i * 1.5) * 0.03;
+          const targetSpeedMultiplier = 1.0 + (error * magnetStrength) + variation;
+          
+          let leadClamp = deltaT < -0.002 ? 0.85 : 1.15;
+          if (currentLap === 70 && playerT > 0.94) {
+            if (deltaT < 0.01) leadClamp = 0.6; 
+          }
+          speed = playerSpeed * THREE.MathUtils.clamp(targetSpeedMultiplier, 0.7, leadClamp);
+          tRefs.current[i] = (tRefs.current[i] + dt * speed * progressPerKmh) % 1;
+        }
+
+        const curve = i === 0 ? processed.curve3D : centerlineCurve;
+        curve.getPointAt(tRefs.current[i], p);
+        curve.getTangentAt(tRefs.current[i], tangent);
+        
+        if (i > 0) {
+          const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+          const carMeta = (car as any);
+          const baseOffset = carMeta.offset || (i % 2 === 0 ? 6 : -6);
+          let currentOffset = lateralRefs.current[i];
+          
+          const worldPosAI = p.clone().add(normal.clone().multiplyScalar(currentOffset));
+          const distSq = worldPosAI.distanceToSquared(playerPos);
+          if (distSq < 30) {
+            const toPlayer = playerPos.clone().sub(p);
+            const playerLat = toPlayer.dot(normal);
+            currentOffset += currentOffset > playerLat ? 0.6 : -0.6;
+          }
+          currentOffset = THREE.MathUtils.lerp(currentOffset, baseOffset, 0.04);
+          currentOffset = THREE.MathUtils.clamp(currentOffset, -15, 15);
+          lateralRefs.current[i] = currentOffset;
+          p.add(normal.multiplyScalar(currentOffset));
+        }
       }
       
       car.ref.current.position.copy(p);
       car.ref.current.lookAt(p.x + tangent.x, p.y, p.z + tangent.z);
 
-      // Spin wheels
       const wheelCircumference = 2.0; 
       const wheelRotationSpeed = (speed / 3.6) * dt * (1 / wheelCircumference);
       car.wheels.current.forEach(w => { if (w) w.rotation.y += wheelRotationSpeed; });
 
-      // Update player lights
       if (i === 0) {
         if (hl.current) hl.current.position.set(p.x + tangent.x * 5, p.y + 1.2, p.z + tangent.z * 5);
         if (tl.current) tl.current.position.set(p.x - tangent.x * 3, p.y + 0.6, p.z - tangent.z * 3);

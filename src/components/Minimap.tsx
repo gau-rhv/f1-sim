@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { useAppStore } from '@/lib/store';
+import * as THREE from 'three';
 import { ProcessedTrack } from '@/lib/useProcessedTrack';
 import styles from './Minimap.module.css';
 
@@ -21,6 +22,7 @@ const TEAM_NAMES = [
 
 export default function Minimap({ processed }: { processed: ProcessedTrack }) {
   const allCarsProgress = useAppStore((s) => s.allCarsProgress);
+  const isPitting = useAppStore((s) => s.isPitting);
   
   const { centerline, bounds } = processed;
   if (!centerline || centerline.length === 0) return null;
@@ -28,9 +30,8 @@ export default function Minimap({ processed }: { processed: ProcessedTrack }) {
   
   const width = maxX - minX;
   const height = maxY - minY;
-  const padding = 10;
   
-  // Calculate SVG scale to fit the 190x190 area (container minus padding)
+  // Calculate SVG scale to fit the 190x190 area
   const scale = Math.min(190 / width, 190 / height);
   
   const svgPath = useMemo(() => {
@@ -41,7 +42,15 @@ export default function Minimap({ processed }: { processed: ProcessedTrack }) {
     }).join(' ') + ' Z';
   }, [centerline, minX, minY, scale, width, height]);
 
-  // Minimap is now always visible as requested
+  const pitPath = useMemo(() => {
+    const points = processed.pitLaneCurve.getPoints(50);
+    return points.map((p, i) => {
+      // Points are already centered, so we need to RE-ADD cx,cy to match logic below
+      const x = (p.x + processed.bounds.cx - minX) * scale + (190 - width * scale) / 2;
+      const y = (p.z + processed.bounds.cy - minY) * scale + (190 - height * scale) / 2;
+      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+    }).join(' ');
+  }, [processed, minX, minY, scale, width, height]);
 
   return (
     <div className={styles.container}>
@@ -49,6 +58,8 @@ export default function Minimap({ processed }: { processed: ProcessedTrack }) {
       <div className={styles.minimapWrapper}>
         <svg viewBox="0 0 190 190" className={styles.trackOutline}>
           <path d={svgPath} />
+          <path d={pitPath} stroke="rgba(255,255,255,0.08)" strokeDasharray="4 2" />
+          
           {/* Start/Finish Line Indicator */}
           {(() => {
             const p = centerline[0];
@@ -77,16 +88,23 @@ export default function Minimap({ processed }: { processed: ProcessedTrack }) {
             );
           })()}
         </svg>
+
         {allCarsProgress
           .map((progress, i) => ({ progress, i }))
-          .sort((a, b) => (a.progress % 1) - (b.progress % 1))
           .map(({ progress, i }) => {
-            const n = centerline.length;
-            const idx = Math.floor((progress % 1) * n);
-            const p = centerline[idx] || centerline[0];
-            
-            const x = (p[0] - minX) * scale + (190 - width * scale) / 2;
-            const y = (p[1] - minY) * scale + (190 - height * scale) / 2;
+            let x, y;
+            if (isPitting[i]) {
+                const vec = new THREE.Vector3();
+                processed.pitLaneCurve.getPointAt(THREE.MathUtils.clamp(progress, 0, 1), vec);
+                x = (vec.x + processed.bounds.cx - minX) * scale + (190 - width * scale) / 2;
+                y = (vec.z + processed.bounds.cy - minY) * scale + (190 - height * scale) / 2;
+            } else {
+                const n = centerline.length;
+                const idx = Math.floor((progress % 1) * n);
+                const p = centerline[idx] || centerline[0];
+                x = (p[0] - minX) * scale + (190 - width * scale) / 2;
+                y = (p[1] - minY) * scale + (190 - height * scale) / 2;
+            }
             
             return (
               <div 
@@ -97,12 +115,11 @@ export default function Minimap({ processed }: { processed: ProcessedTrack }) {
                   top: `${y}px`,
                   backgroundColor: CAR_COLORS[i],
                   color: CAR_COLORS[i],
-                  zIndex: Math.floor(progress * 1000) // Position-based z-index
+                  zIndex: 100 + i
                 }}
               />
             );
           })}
-        
       </div>
       
       {/* Live Standings Below Radar */}
@@ -114,7 +131,14 @@ export default function Minimap({ processed }: { processed: ProcessedTrack }) {
             <div key={data.i} className={styles.leaderboardItem}>
               <span className={styles.posText}>P{idx + 1}</span>
               <div className={styles.leaderboardDot} style={{ backgroundColor: CAR_COLORS[data.i] }} />
-              <span>{TEAM_NAMES[data.i]}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', flex: 1, alignItems: 'center' }}>
+                <span>{TEAM_NAMES[data.i]}</span>
+                {isPitting[data.i] && (
+                  <span style={{ fontSize: '8px', color: '#ff4d4d', fontWeight: 900, background: 'rgba(255,77,77,0.1)', padding: '1px 4px', borderRadius: '2px' }}>
+                    PIT
+                  </span>
+                )}
+              </div>
             </div>
           ))}
       </div>

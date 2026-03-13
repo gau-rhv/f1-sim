@@ -8,6 +8,8 @@ export default function ControlsHint() {
   const setZoomed = useAppStore((s) => s.setZoomed);
   const currentSpeed = useAppStore((s) => s.currentSpeed);
   const currentLap = useAppStore((s) => s.currentLap);
+  const allCarsTireWear = useAppStore((s) => s.allCarsTireWear);
+  const playerWear = allCarsTireWear[0] || 100;
 
   return (
     <div className={styles.container}>
@@ -18,11 +20,31 @@ export default function ControlsHint() {
             <span className={styles.lapValue}>{currentLap}</span>
             <span className={styles.lapTotal}>/ 70</span>
           </div>
-          <div className={styles.speedLabel}>LIVE SPEED</div>
-          <div className={styles.speedValue}>
-            {Math.round(currentSpeed)}
-            <span className={styles.unit}>KM/H</span>
+
+          <div className={styles.speedSection}>
+            <div className={styles.speedLabel}>LIVE SPEED</div>
+            <div className={styles.speedValue}>
+              {Math.round(currentSpeed)}
+              <span className={styles.unit}>KM/H</span>
+            </div>
           </div>
+          
+          <div className={styles.tireSection}>
+            <div className={styles.tireLabels}>
+              <span className={styles.tireLabel}>TIRE HEALTH</span>
+              <span className={styles.tireValue}>{Math.round(playerWear)}%</span>
+            </div>
+            <div className={styles.wearBarBg}>
+              <div 
+                className={styles.wearBarFill} 
+                style={{ 
+                  width: `${playerWear}%`,
+                  backgroundColor: playerWear < 30 ? '#ff4d4d' : playerWear < 60 ? '#ffa500' : '#4ade80'
+                }} 
+              />
+            </div>
+          </div>
+
           <button className={styles.exitBtn} onClick={() => setZoomed(false)}>
             EXIT ZOOM ✕
           </button>

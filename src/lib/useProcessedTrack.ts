@@ -19,6 +19,10 @@ export interface ProcessedTrack {
   minSpeed: number;
   maxSpeed: number;
   curve3D: THREE.CatmullRomCurve3;
+  pitLaneCurve: THREE.CatmullRomCurve3;
+  pitBoxes3D: THREE.Vector3[];
+  pitEntryProgress: number;
+  pitExitProgress: number;
   brakingZones: { start: number; end: number }[];
   throttleZones: { start: number; end: number }[];
   apexIndices: number[];
@@ -64,11 +68,20 @@ export function processTrack(track: TrackData): ProcessedTrack {
   const cy = (minY + maxY) / 2;
   const range = Math.max(maxX - minX, maxY - minY) * 1.2;
 
-  // 6. Build 3D curve (centered at origin)
+  // 6. Build 3D curves (centered at origin)
   const centeredLine = racingLine.map(
     ([x, y]) => [x - cx, y - cy] as [number, number]
   );
   const curve3D = buildCurve3D(centeredLine, 0.3);
+
+  const centeredPitPoints = track.pitLanePoints.map(
+    ([x, y]) => new THREE.Vector3(x - cx, 0.3, y - cy)
+  );
+  const pitLaneCurve = new THREE.CatmullRomCurve3(centeredPitPoints, false);
+
+  const pitBoxes3D = track.pitBoxes.map(
+    ([x, y]) => new THREE.Vector3(x - cx, 0.3, y - cy)
+  );
 
   // 7. Lap time estimate
   const lapTime = estimateLapTime(speeds, track.lengthKm);
@@ -82,6 +95,10 @@ export function processTrack(track: TrackData): ProcessedTrack {
     minSpeed,
     maxSpeed,
     curve3D,
+    pitLaneCurve,
+    pitBoxes3D,
+    pitEntryProgress: track.pitEntryProgress,
+    pitExitProgress: track.pitExitProgress,
     brakingZones,
     throttleZones,
     apexIndices,

@@ -115,3 +115,53 @@
 .desc {
   color: #555555;
 }
+
+.speedSection {
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+
+.tireSection {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  width: 100%;
+}
+
+.tireLabels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.tireLabel {
+  font-family: var(--font-display);
+  font-size: 8px;
+  color: #555;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.tireValue {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.wearBarBg {
+  width: 100%;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.wearBarFill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
