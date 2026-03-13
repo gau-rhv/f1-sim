@@ -31,23 +31,27 @@ export default function Minimap({ processed }: { processed: ProcessedTrack }) {
   const width = maxX - minX;
   const height = maxY - minY;
   
-  // Calculate SVG scale to fit the 190x190 area
-  const scale = Math.min(190 / width, 190 / height);
+  // Standardize on 210x210 coordinate space (matching the CSS wrapper)
+  const SIZE = 210;
+  const PADDING = 20;
+  
+  // Calculate SVG scale to fit the 210x210 area with padding
+  const scale = Math.min((SIZE - PADDING * 2) / width, (SIZE - PADDING * 2) / height);
   
   const svgPath = useMemo(() => {
     return centerline.map((p, i) => {
-      const x = (p[0] - minX) * scale + (190 - width * scale) / 2;
-      const y = (p[1] - minY) * scale + (190 - height * scale) / 2;
+      const x = (p[0] - minX) * scale + (SIZE - width * scale) / 2;
+      const y = (p[1] - minY) * scale + (SIZE - height * scale) / 2;
       return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
     }).join(' ') + ' Z';
   }, [centerline, minX, minY, scale, width, height]);
 
   const pitPath = useMemo(() => {
+    if (!processed.pitLaneCurve) return '';
     const points = processed.pitLaneCurve.getPoints(50);
     return points.map((p, i) => {
-      // Points are already centered, so we need to RE-ADD cx,cy to match logic below
-      const x = (p.x + processed.bounds.cx - minX) * scale + (190 - width * scale) / 2;
-      const y = (p.z + processed.bounds.cy - minY) * scale + (190 - height * scale) / 2;
+      const x = (p.x + processed.bounds.cx - minX) * scale + (SIZE - width * scale) / 2;
+      const y = (p.z + processed.bounds.cy - minY) * scale + (SIZE - height * scale) / 2;
       return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
     }).join(' ');
   }, [processed, minX, minY, scale, width, height]);
@@ -56,22 +60,23 @@ export default function Minimap({ processed }: { processed: ProcessedTrack }) {
     <div className={styles.container}>
       <div className={styles.title}>PHYSICS ENGINE SIMULATION</div>
       <div className={styles.minimapWrapper}>
-        <svg viewBox="0 0 190 190" className={styles.trackOutline}>
+        <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className={styles.trackOutline}>
           <path d={svgPath} />
           <path d={pitPath} stroke="rgba(255,255,255,0.08)" strokeDasharray="4 2" />
           
           {/* Start/Finish Line Indicator */}
           {(() => {
             const p = centerline[0];
+            const x = (p[0] - minX) * scale + (SIZE - width * scale) / 2;
+            const y = (p[1] - minY) * scale + (SIZE - height * scale) / 2;
+            
+            // Draw a simple perpendicular line at the start point
             const next = centerline[1];
             const dx = next[0] - p[0];
             const dy = next[1] - p[1];
             const len = Math.sqrt(dx * dx + dy * dy) || 1;
             const nx = -dy / len;
             const ny = dx / len;
-            
-            const x = (p[0] - minX) * scale + (190 - width * scale) / 2;
-            const y = (p[1] - minY) * scale + (190 - height * scale) / 2;
             
             const x1 = x + nx * 10;
             const y1 = y + ny * 10;
@@ -93,17 +98,17 @@ export default function Minimap({ processed }: { processed: ProcessedTrack }) {
           .map((progress, i) => ({ progress, i }))
           .map(({ progress, i }) => {
             let x, y;
-            if (isPitting[i]) {
+            if (isPitting[i] && processed.pitLaneCurve) {
                 const vec = new THREE.Vector3();
                 processed.pitLaneCurve.getPointAt(THREE.MathUtils.clamp(progress, 0, 1), vec);
-                x = (vec.x + processed.bounds.cx - minX) * scale + (190 - width * scale) / 2;
-                y = (vec.z + processed.bounds.cy - minY) * scale + (190 - height * scale) / 2;
+                x = (vec.x + processed.bounds.cx - minX) * scale + (SIZE - width * scale) / 2;
+                y = (vec.z + processed.bounds.cy - minY) * scale + (SIZE - height * scale) / 2;
             } else {
                 const n = centerline.length;
                 const idx = Math.floor((progress % 1) * n);
                 const p = centerline[idx] || centerline[0];
-                x = (p[0] - minX) * scale + (190 - width * scale) / 2;
-                y = (p[1] - minY) * scale + (190 - height * scale) / 2;
+                x = (p[0] - minX) * scale + (SIZE - width * scale) / 2;
+                y = (p[1] - minY) * scale + (SIZE - height * scale) / 2;
             }
             
             return (

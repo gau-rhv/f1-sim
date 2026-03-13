@@ -36,38 +36,64 @@
 }
 
 .valueGreen {
-  composes: value;
+  font-family: var(--font-data);
   font-size: 14px;
   font-weight: 600;
   color: #39FF14;
 }
 
 .valueYellow {
-  composes: value;
+  font-family: var(--font-data);
   font-size: 14px;
   font-weight: 600;
   color: #FFD700;
 }
 
 .valueRed {
-  composes: value;
+  font-family: var(--font-data);
   font-size: 14px;
   font-weight: 600;
   color: #E8002D;
 }
 
 .valueBlue {
-  composes: value;
+  font-family: var(--font-data);
   font-size: 14px;
   font-weight: 600;
   color: #00D2FF;
 }
 
 .valueLarge {
-  composes: value;
+  font-family: var(--font-data);
   font-size: 18px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  color: #ffffff;
+}
+
+.valueBig {
+  font-family: var(--font-data);
+  font-size: 24px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.tireSection {
+  margin-top: 10px;
+}
+
+.tireBarBg {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.tireBarFill {
+  height: 100%;
+  transition: width 0.3s ease, background-color 0.3s ease;
 }
 
 .divider {

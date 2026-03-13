@@ -32,6 +32,7 @@ export interface ProcessedTrack {
   bounds: { minX: number; maxX: number; minY: number; maxY: number; cx: number; cy: number; range: number };
 }
 
+// Reset cache to handle interface changes during dev
 const trackCache = new Map<string, ProcessedTrack>();
 
 export function processTrack(track: TrackData): ProcessedTrack {

@@ -29,22 +29,6 @@ export default function ControlsHint() {
             </div>
           </div>
           
-          <div className={styles.tireSection}>
-            <div className={styles.tireLabels}>
-              <span className={styles.tireLabel}>TIRE HEALTH</span>
-              <span className={styles.tireValue}>{Math.round(playerWear)}%</span>
-            </div>
-            <div className={styles.wearBarBg}>
-              <div 
-                className={styles.wearBarFill} 
-                style={{ 
-                  width: `${playerWear}%`,
-                  backgroundColor: playerWear < 30 ? '#ff4d4d' : playerWear < 60 ? '#ffa500' : '#4ade80'
-                }} 
-              />
-            </div>
-          </div>
-
           <button className={styles.exitBtn} onClick={() => setZoomed(false)}>
             EXIT ZOOM ✕
           </button>

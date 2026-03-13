@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useMemo, useCallback } from 'react';
+import { useRef, useMemo, useCallback, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree, ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, Line, Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -144,6 +144,163 @@ function RacingSurface({ processed }: { processed: ProcessedTrack }) {
     <mesh geometry={geometry}>
       <meshStandardMaterial color="#3a3a3a" roughness={0.9} side={THREE.DoubleSide} />
     </mesh>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Layer 1c: PITLANE SURFACE — narrower, distinct asphalt
+// ═══════════════════════════════════════════════════════════════
+function PitlaneSurface({ processed }: { processed: ProcessedTrack }) {
+  const geometry = useMemo(() => {
+    if (!processed.pitLaneCurve) return null;
+    const pts = processed.pitLaneCurve.getPoints(100);
+    const n = pts.length;
+    const hw = 7; 
+
+    const vertices: number[] = [];
+    const indices: number[] = [];
+
+    for (let i = 0; i < n; i++) {
+        const prev = pts[i === 0 ? 0 : i - 1];
+        const next = pts[i === n - 1 ? n - 1 : i + 1];
+        const dx = next.x - prev.x;
+        const dz = next.z - prev.z;
+        const len = Math.sqrt(dx * dx + dz * dz) || 1;
+        const nx = -dz / len;
+        const nz = dx / len;
+
+        vertices.push(pts[i].x + nx * hw, 0.04, pts[i].z + nz * hw);
+        vertices.push(pts[i].x - nx * hw, 0.04, pts[i].z - nz * hw);
+    }
+
+    for (let i = 0; i < n - 1; i++) {
+        indices.push(i * 2, i * 2 + 1, (i + 1) * 2);
+        indices.push(i * 2 + 1, (i + 1) * 2 + 1, (i + 1) * 2);
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geo.setIndex(indices);
+    geo.computeVertexNormals();
+    return geo;
+  }, [processed]);
+
+  if (!geometry) return null;
+
+  return (
+    <group>
+      <mesh geometry={geometry}>
+        <meshStandardMaterial color="#444" roughness={0.8} metalness={0.1} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Pitlane curbs */}
+      <Line 
+        points={processed.pitLaneCurve.getPoints(100).map(p => new THREE.Vector3(p.x, 0.06, p.z))}
+        color="#fff" 
+        lineWidth={1}
+        transparent
+        opacity={0.3}
+      />
+    </group>
+  );
+}
+
+function PitBoxes({ processed }: { processed: ProcessedTrack }) {
+  const teamColors = ["#E8002D", "#0066FF", "#C0C0C0", "#FF8700"];
+  return (
+    <>
+      {processed.pitBoxes3D.map((pos, i) => {
+        // Calculate orientation based on pitlane curve
+        const t = (i + 1) / 5; 
+        const tangent = new THREE.Vector3();
+        if (processed.pitLaneCurve) {
+          processed.pitLaneCurve.getTangentAt(t, tangent);
+        }
+        const angle = Math.atan2(tangent.x, tangent.z);
+
+        return (
+          <group key={i} position={[pos.x, 0, pos.z]} rotation={[0, angle, 0]}>
+            {/* MAIN GARAGE BUILDING */}
+            <group position={[0, 4, -13]}>
+               {/* Main Structure Shell */}
+               <mesh>
+                 <boxGeometry args={[14, 8, 10]} />
+                 <meshStandardMaterial color="#1a1a1a" metalness={0.5} roughness={0.4} />
+               </mesh>
+               
+               {/* Team Colored Facade with Opening */}
+               <group position={[0, 0, 5.1]}>
+                  {/* Facade side pillars */}
+                  <mesh position={[-5.5, 0, 0]}><boxGeometry args={[3, 8, 0.6]} /><meshStandardMaterial color={teamColors[i]} /></mesh>
+                  <mesh position={[5.5, 0, 0]}><boxGeometry args={[3, 8, 0.6]} /><meshStandardMaterial color={teamColors[i]} /></mesh>
+                  
+                  {/* Upper Facade Beam */}
+                  <mesh position={[0, 3, 0]}><boxGeometry args={[8, 2, 0.6]} /><meshStandardMaterial color={teamColors[i]} /></mesh>
+                  
+                  {/* TEAM SIGN / PLATE */}
+                  <mesh position={[0, 3.2, 0.4]}>
+                    <boxGeometry args={[10, 1.2, 0.3]} />
+                    <meshStandardMaterial color={teamColors[i]} emissive={teamColors[i]} emissiveIntensity={0.8} />
+                  </mesh>
+                  
+                  {/* Garage Interior Look (Dark depth) */}
+                  <mesh position={[0, -1, -0.2]}>
+                    <boxGeometry args={[8, 6, 0.1]} />
+                    <meshStandardMaterial color="#050505" />
+                  </mesh>
+
+                  {/* INTERIOR SCREENS / TELEMETRY (Glow in dark) */}
+                  <mesh position={[-2, 1, -0.1]}>
+                    <boxGeometry args={[1.5, 0.8, 0.1]} />
+                    <meshStandardMaterial color="#00D2FF" emissive="#00D2FF" emissiveIntensity={0.5} />
+                  </mesh>
+                  <mesh position={[2, 1, -0.1]}>
+                    <boxGeometry args={[1.5, 0.8, 0.1]} />
+                    <meshStandardMaterial color="#39FF14" emissive="#39FF14" emissiveIntensity={0.4} />
+                  </mesh>
+               </group>
+               
+               {/* Roof Overhang with Spotlights */}
+               <mesh position={[0, 4.2, 3]}>
+                 <boxGeometry args={[16, 0.6, 6]} />
+                 <meshStandardMaterial color="#111" />
+               </mesh>
+            </group>
+
+            {/* MECHANICAL PIT GANTRY (The rig hanging over the car) */}
+            <group position={[0, 7.5, -4]}>
+               {/* Main supporting beam */}
+               <mesh position={[0, 0, -3]} rotation={[Math.PI/2, 0, 0]}>
+                 <cylinderGeometry args={[0.2, 0.2, 8, 8]} />
+                 <meshStandardMaterial color="#444" metalness={0.8} />
+               </mesh>
+               {/* Swing arm extending over the track */}
+               <mesh position={[0, 0, 2]}>
+                 <boxGeometry args={[1, 0.4, 6]} />
+                 <meshStandardMaterial color={teamColors[i]} />
+               </mesh>
+               {/* Team logo on gantry side */}
+               <mesh position={[0.55, 0, 2]}><boxGeometry args={[0.1, 0.4, 2]} /><meshStandardMaterial color="#fff" /></mesh>
+            </group>
+
+            {/* STRUCTURAL SIDE COLUMNS (Paddock Support) */}
+            <mesh position={[-8, 4, -10]}><boxGeometry args={[1, 8, 1]} /><meshStandardMaterial color="#333" /></mesh>
+            <mesh position={[8, 4, -10]}><boxGeometry args={[1, 8, 1]} /><meshStandardMaterial color="#333" /></mesh>
+
+            {/* Drive-in Pit Box Ground Marker */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 2]}>
+              <planeGeometry args={[12, 16]} />
+              <meshStandardMaterial color={teamColors[i]} transparent opacity={0.3} />
+            </mesh>
+            
+            {/* White Framing Lines */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.12, 2]}>
+               <ringGeometry args={[7.8, 8, 4, 1, Math.PI / 4, Math.PI * 2]} />
+               <meshBasicMaterial color="#fff" transparent opacity={0.4} />
+            </mesh>
+          </group>
+        );
+      })}
+    </>
   );
 }
 
@@ -689,6 +846,22 @@ function AnimatedCars({ processed }: { processed: ProcessedTrack }) {
   
   const centerlineCurve = useMemo(() => new THREE.CatmullRomCurve3(centerlinePts, true), [centerlinePts]);
 
+  const wearRefs = useRef<number[]>([100, 100, 100, 100]);
+  const pitStateRefs = useRef<('none'|'entry'|'stopping'|'exit')[]>(['none', 'none', 'none', 'none']);
+  const pitTimerRefs = useRef<number[]>([0, 0, 0, 0]);
+  
+  // Randomization Refs
+  const pitThresholdRefs = useRef<number[]>([20, 30, 25, 35]); // Default thresholds
+  const pitDurationRefs = useRef<number[]>([3, 3, 3, 3]); // Default durations
+  
+  // Initialize random values once
+  useEffect(() => {
+    pitThresholdRefs.current = [20, 20 + Math.random() * 20, 20 + Math.random() * 20, 20 + Math.random() * 20];
+    pitDurationRefs.current = [2.5, 2 + Math.random() * 2.5, 2 + Math.random() * 2.5, 2 + Math.random() * 2.5];
+  }, []);
+
+  const lastStoreUpdate = useRef(0);
+
   useFrame((state, dt) => {
     const n = processed.racingLine.length;
     
@@ -702,13 +875,9 @@ function AnimatedCars({ processed }: { processed: ProcessedTrack }) {
     const progressPerKmh = 0.0008;
 
     // 1. Handle Player & Overall Physics
-    const { allCarsTireWear, setAllCarsTireWear, isPitting, setIsPitting } = useAppStore.getState();
-    const wearRefs = useRef<number[]>([100, 100, 100, 100]);
-    const pitStateRefs = useRef<('none'|'entry'|'stopping'|'exit')[]>(['none', 'none', 'none', 'none']);
-    const pitTimerRefs = useRef<number[]>([0, 0, 0, 0]);
+    const { setAllCarsTireWear, setIsPitting } = useAppStore.getState();
 
     // Update store with tire wear every ~1s to save on perf
-    const lastStoreUpdate = useRef(0);
     if (state.clock.getElapsedTime() - lastStoreUpdate.current > 1.0) {
       setAllCarsTireWear([...wearRefs.current]);
       setIsPitting([...pitStateRefs.current.map(s => s !== 'none')]);
@@ -729,23 +898,24 @@ function AnimatedCars({ processed }: { processed: ProcessedTrack }) {
     
     // 2. Update and render all cars
     const playerPos = new THREE.Vector3();
-    if (cars[0].ref.current) playerPos.copy(cars[0].ref.current.position);
+    if (cars[0] && cars[0].ref.current) playerPos.copy(cars[0].ref.current.position);
 
     cars.forEach((car, i) => {
-      if (!car.ref.current) return;
+      if (!car.ref || !car.ref.current) return;
       
       let speed = playerSpeed; 
       const currentState = pitStateRefs.current[i];
       
-      // Tire Wear Decay
-      const wearDecayBase = 0.02; // Tune for 1-2 stops
+      // Tire Wear Decay - Aim for 1-2 stops in 70 laps
+      const wearDecayBase = 0.55; 
       const decay = (speed / 300) * wearDecayBase * dt;
       wearRefs.current[i] = Math.max(0, wearRefs.current[i] - decay);
 
       // Pitstop State Machine
       if (currentState === 'none') {
         const t = tRefs.current[i];
-        if (wearRefs.current[i] < 30) { // Trigger pit if wear < 30%
+        // Trigger pit if wear < randomized threshold for this car
+        if (wearRefs.current[i] < pitThresholdRefs.current[i]) { 
           const entryDist = Math.abs(t - processed.pitEntryProgress);
           if (entryDist < 0.005) {
             pitStateRefs.current[i] = 'entry';
@@ -757,7 +927,7 @@ function AnimatedCars({ processed }: { processed: ProcessedTrack }) {
       const p = new THREE.Vector3();
       const tangent = new THREE.Vector3();
 
-      if (currentState !== 'none') {
+      if (currentState !== 'none' && processed.pitLaneCurve) {
         // PITLANE LOGIC
         speed = 80; // Pit limit
 
@@ -765,7 +935,7 @@ function AnimatedCars({ processed }: { processed: ProcessedTrack }) {
           tRefs.current[i] += dt * (speed * progressPerKmh) * 0.8; // Move along pitlane
           if (tRefs.current[i] > 0.45) { // Halfway through is stopping area
             pitStateRefs.current[i] = 'stopping';
-            pitTimerRefs.current[i] = 2.5; // 2.5s tire change
+            pitTimerRefs.current[i] = pitDurationRefs.current[i]; // Use randomized duration
           }
         } else if (currentState === 'stopping') {
           speed = 0;
@@ -773,6 +943,12 @@ function AnimatedCars({ processed }: { processed: ProcessedTrack }) {
           if (pitTimerRefs.current[i] <= 0) {
             pitStateRefs.current[i] = 'exit';
             wearRefs.current[i] = 100; // Fresh Tires!
+            
+            // Randomize NEXT stop parameters for this car
+            if (i > 0) {
+              pitThresholdRefs.current[i] = 20 + Math.random() * 20;
+              pitDurationRefs.current[i] = 2 + Math.random() * 2.5;
+            }
           }
         } else if (currentState === 'exit') {
           tRefs.current[i] += dt * (speed * progressPerKmh) * 0.8;
@@ -788,7 +964,7 @@ function AnimatedCars({ processed }: { processed: ProcessedTrack }) {
         
         // Special case for stopping at assigned pit box
         if (currentState === 'stopping' || (currentState === 'entry' && tRefs.current[i] > 0.4)) {
-          const boxPos = processed.pitBoxes3D[i];
+          const boxPos = processed.pitBoxes3D?.[i];
           if (boxPos) {
              const lerpT = THREE.MathUtils.clamp((tRefs.current[i] - 0.4) * 10, 0, 1);
              p.lerp(boxPos, lerpT);
@@ -847,9 +1023,10 @@ function AnimatedCars({ processed }: { processed: ProcessedTrack }) {
           p.add(normal.multiplyScalar(currentOffset));
         }
       }
-      
-      car.ref.current.position.copy(p);
-      car.ref.current.lookAt(p.x + tangent.x, p.y, p.z + tangent.z);
+      if (car.ref.current) {
+        car.ref.current.position.copy(p);
+        car.ref.current.lookAt(p.x + tangent.x, p.y, p.z + tangent.z);
+      }
 
       const wheelCircumference = 2.0; 
       const wheelRotationSpeed = (speed / 3.6) * dt * (1 / wheelCircumference);
@@ -968,6 +1145,8 @@ export default function Track3DScene({ processed }: { processed: ProcessedTrack 
       {/* Track layers (matching f1-sim: surface → racing surface → boundaries → racing line → zones) */}
       <TrackSurface processed={processed} />
       <RacingSurface processed={processed} />
+      <PitlaneSurface processed={processed} />
+      <PitBoxes processed={processed} />
       <TrackBoundary processed={processed} offset={20} />
       <TrackBoundary processed={processed} offset={-20} />
 
