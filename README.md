@@ -1,38 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# F1 Strategy & Racing Line Intelligence 🏎️🏁
 
-## Getting Started
+An advanced Formula 1 track analysis and strategy simulation tool built with **Next.js**, **React Three Fiber**, and **TailwindCSS**. This application provides precision racing-line intelligence, cinematic telemetry, and track-first analytics directly in your browser.
 
-First, run the development server:
+## 🌟 Key Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Interactive 3D Track Maps:** Visualize iconic F1 tracks using Three.js, complete with panning, zooming, and dynamic data overlays.
+- **Racing Line Intelligence:** View optimal racing lines, apex points, braking zones, throttle zones, and DRS zones.
+- **Strategy Engine:** Simulate tire wear, pitstop strategies, and lap-by-lap progression across different tire compounds.
+- **Live Telemetry Simulation:** Real-time feedback on car speed gradients and track positioning.
+- **Multiple Tracks:** Currently supports legendary circuits like **Monza**, **Silverstone**, **Spa-Francorchamps**, and **Bahrain**.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Framework:** [Next.js](https://nextjs.org/) (App Router)
+- **UI/Styling:** React, [TailwindCSS v4](https://tailwindcss.com/), Framer Motion
+- **3D Rendering:** [Three.js](https://threejs.org/), [React Three Fiber](https://r3f.docs.pmnd.rs/), [Drei](https://github.com/pmndrs/drei)
+- **State Management:** [Zustand](https://zustand-demo.pmnd.rs/)
+- **Icons & Typography:** [Lucide React](https://lucide.dev/), Titillium Web, Geist
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🚀 Getting Started
 
-## Learn More
+### Prerequisites
 
-To learn more about Next.js, take a look at the following resources:
+Make sure you have Node.js and a package manager (`npm`, `yarn`, `pnpm`, or `bun`) installed.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Installation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Clone the repository and navigate to the project directory:
+   ```bash
+   cd f1
+   ```
 
-## Deploy on Vercel
+2. Install dependencies:
+   ```bash
+   npm install
+   # or
+   yarn install
+   # or
+   pnpm install
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3. Start the development server:
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   # or
+   pnpm dev
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the application in action.
 
-.
+## 📂 Project Structure
+
+- `src/app/` - Next.js App Router pages and layouts.
+- `src/components/` - Reusable UI components including MapSection, StrategySection, Navbar, and Track3DScene.
+- `src/lib/` - Core logic, state management (`store.ts`), strategy algorithms (`strategyEngine.ts`), and track data (`tracks.ts`, `racingLine.ts`).
+- `src/styles/` - Global stylesheets.
+
+## 🏎️ Available Tracks
+
+- 🇲🇨 **Monza** (3.337 km, 19 Corners)
+- 🇬🇧 **Silverstone** (5.891 km, 18 Corners)
+- 🇧🇪 **Spa-Francorchamps** (7.004 km, 19 Corners)
+- 🇧🇭 **Bahrain** (5.412 km, 15 Corners)
+
+## 🤝 Contributing
+
+Feedback and contributions are welcome! Feel free to open issues or submit pull requests to enhance the simulation capabilities or add new tracks.
+
+---
+*Built with passion for F1 and modern web technologies.*
